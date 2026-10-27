@@ -31,6 +31,7 @@ export function InviteLinkContent({
     if (!inviteUrl) return;
 
     // Web Share APIに対応しているか確認
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Reflect.get は any を返す。非対応ブラウザでは undefined になるため、直後に typeof で確認している
     const share = Reflect.get(navigator, "share") as
       | typeof navigator.share
       | undefined;
