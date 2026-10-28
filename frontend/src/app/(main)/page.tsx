@@ -7,9 +7,49 @@ import { HomeHeader } from "../../components/ui/HomeHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { Loading } from "../../components/ui/Loading";
-import type { FeedFilter, FeedPost, FeedResponse } from "../../types/feed";
+import type {
+  FeedFilter,
+  FeedPost,
+  FeedResponse,
+  ObjectionListItem,
+  ObjectionListResponse,
+} from "../../types/feed";
+
+async function fetchFeed(signal: AbortSignal): Promise<FeedPost[]> {
+  // フレンドの投稿一覧を取得する。
+  const response = await fetch("/api/feed", { signal });
+  if (!response.ok) throw new Error("投稿一覧を取得できませんでした。");
+
+  const data: FeedResponse = await response.json();
+  return data.items;
+}
+
+async function fetchAllMyObjections(
+  signal: AbortSignal,
+): Promise<ObjectionListItem[]> {
+  const allItems: ObjectionListItem[] = [];
+  let cursor: string | null = null;
+
+  // nextCursorがなくなるまでページを順番に取得し、全期間の異議を集める。
+  do {
+    const query = new URLSearchParams({ limit: "2" });
+    if (cursor !== null) query.set("cursor", cursor);
+
+    const response = await fetch(`/api/me/objections?${query.toString()}`, {
+      signal,
+    });
+    if (!response.ok) throw new Error("異議一覧を取得できませんでした。");
+
+    const data: ObjectionListResponse = await response.json();
+    allItems.push(...data.items);
+    cursor = data.nextCursor;
+  } while (cursor !== null);
+
+  return allItems;
+}
 
 export default function HomePage() {
+  // allは全投稿、objectedは自分が異議を出したタスクの投稿を表示する。
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +60,6 @@ export default function HomePage() {
     setRetryKey((current) => current + 1);
   }, []);
 
-  //仮API
   useEffect(() => {
     const controller = new AbortController();
 
@@ -29,26 +68,34 @@ export default function HomePage() {
       setError(false);
 
       try {
-        const response = await fetch(`/api/feed?filter=${filter}`, {
-          signal: controller.signal,
-        });
+        // まず表示対象になる投稿一覧を取得する。
+        const feedPosts = await fetchFeed(controller.signal);
 
-        if (!response.ok) {
-          throw new Error(`フィードの取得に失敗しました (${response.status})`);
+        if (filter === "all") {
+          // 「すべて」タブでは投稿一覧をそのまま表示する。
+          setPosts(feedPosts);
+        } else {
+          // 「異議」タブでは異議一覧から対象タスクIDを集める。
+          const objections = await fetchAllMyObjections(controller.signal);
+          const objectedTaskIds = new Set(
+            objections.map((objection) => objection.taskId),
+          );
+          // 投稿側のtaskIdが異議一覧に含まれる投稿だけを表示する。
+          setPosts(feedPosts.filter((post) => objectedTaskIds.has(post.taskId)));
         }
-
-        const data: FeedResponse = await response.json();
-        setPosts(data.items);
       } catch (cause) {
+        // タブ切替などで中断された通信はエラー画面にしない。
         if (cause instanceof Error && cause.name === "AbortError") return;
         setError(true);
       } finally {
+        // 古い通信が終わったときに、新しい通信のローディング表示を消さない。
         if (!controller.signal.aborted) setIsLoading(false);
       }
     }
 
     void loadFeed();
 
+    // タブが切り替わったら前の通信を中断し、古い結果の反映を防ぐ。
     return () => controller.abort();
   }, [filter, retryKey]);
 
@@ -84,8 +131,11 @@ export default function HomePage() {
             {...(post.avatarUrl !== undefined
               ? { avatarUrl: post.avatarUrl }
               : {})}
-            {...(post.remainingTime !== undefined
-              ? { remainingTime: post.remainingTime }
+            {...(post.deadlineAt !== undefined
+              ? { deadlineAt: post.deadlineAt }
+              : {})}
+            {...(post.reviewEndsAt !== undefined
+              ? { reviewEndsAt: post.reviewEndsAt }
               : {})}
           />
         ))

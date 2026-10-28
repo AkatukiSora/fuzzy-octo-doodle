@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card } from "../ui/Card";
 import { ReportMenu } from "../ui/ReportMenu";
 import styles from "./CommunityTaskCard.module.css";
@@ -17,7 +18,8 @@ interface CommunityTaskCardProps {
   timeAgo: string;
   taskTitle: string;
   status: string;
-  remainingTime?: string;
+  deadlineAt?: string;
+  reviewEndsAt?: string;
   reactions: Reaction[];
   onReactionClick?: (emoji: string) => void;
   onDetailClick?: () => void;
@@ -30,12 +32,40 @@ export function CommunityTaskCard({
   timeAgo,
   taskTitle,
   status,
-  remainingTime,
+  deadlineAt,
+  reviewEndsAt,
   reactions,
   onReactionClick,
   onDetailClick,
   onReport,
 }: CommunityTaskCardProps) {
+  const [now, setNow] = useState<number | null>(null);
+  const isReviewing = status === "審査中" || status === "reviewing";
+  const targetTime = isReviewing ? reviewEndsAt : deadlineAt;
+
+  useEffect(() => {
+    if (!targetTime) return;
+
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [targetTime]);
+
+  const remainingTime =
+    targetTime !== undefined && now !== null
+      ? formatRemainingTime(targetTime, now)
+      : null;
+  const timeLabel =
+    remainingTime === "期限切れ"
+      ? isReviewing
+        ? "審査終了時刻を過ぎています"
+        : "期限切れ"
+      : remainingTime === null
+        ? null
+        : isReviewing
+          ? `審査終了まで${remainingTime}`
+          : `期限まで${remainingTime}`;
+
   return (
     <Card padding="md" variant="outlined">
       <article className={styles["content"]}>
@@ -82,9 +112,9 @@ export function CommunityTaskCard({
             {status}
           </span>
 
-          {remainingTime && (
+          {timeLabel !== null && (
             <span className={styles["remaining"]}>
-              ◷ {remainingTime}
+              ◷ {timeLabel}
             </span>
           )}
         </div>
@@ -127,4 +157,22 @@ export function CommunityTaskCard({
       </article>
     </Card>
   );
+}
+
+function formatRemainingTime(deadlineAt: string, now: number): string | null {
+  const deadline = Date.parse(deadlineAt);
+  if (!Number.isFinite(deadline)) return null;
+
+  const difference = deadline - now;
+  if (difference <= 0) return "期限切れ";
+
+  const totalMinutes = Math.ceil(difference / 60_000);
+  if (totalMinutes < 60) return `あと${totalMinutes}分`;
+
+  const totalHours = Math.floor(totalMinutes / 60);
+  if (totalHours < 24) return `あと${totalHours}時間`;
+
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  return hours > 0 ? `あと${days}日${hours}時間` : `あと${days}日`;
 }

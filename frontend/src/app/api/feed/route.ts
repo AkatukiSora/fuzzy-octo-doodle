@@ -1,71 +1,60 @@
 import { NextResponse } from "next/server";
-import type { FeedFilter, FeedPost, FeedResponse } from "../../../types/feed";
+import type { FeedPost, FeedResponse } from "../../../types/feed";
 
-type MockFeedPost = FeedPost & { objected: boolean };
+// 仮の期限日時を「現在から何時間後」としてISO形式で作る。
+function hoursFromNow(hours: number): string {
+  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+}
 
-const mockPosts: MockFeedPost[] = [
+// 投稿一覧APIが返すデータの仮データ。taskIdで異議一覧と結び付ける。
+const mockPosts: FeedPost[] = [
   {
     id: "post-1",
+    taskId: "task-1",
     userName: "さくら",
     timeAgo: "2時間前",
     taskTitle: "毎朝30分散歩する",
     status: "達成！",
-    remainingTime: "達成済み",
     reactions: [
       { emoji: "👏", count: 3 },
       { emoji: "🔥", count: 1 },
     ],
-    objected: false,
   },
   {
     id: "post-2",
+    taskId: "task-2",
     userName: "たくみ",
     timeAgo: "昨日",
     taskTitle: "毎日英単語を20個覚える",
     status: "進行中",
-    remainingTime: "あと5日",
+    deadlineAt: hoursFromNow(5 * 24),
     reactions: [{ emoji: "🔥", count: 2 }],
-    objected: true,
   },
   {
     id: "post-3",
+    taskId: "task-3",
     userName: "ゆい",
     timeAgo: "3時間前",
     taskTitle: "週に3回、筋トレする",
     status: "審査中",
-    remainingTime: "確認中",
+    reviewEndsAt: hoursFromNow(18),
     reactions: [{ emoji: "💪", count: 4 }],
-    objected: false,
   },
   {
     id: "post-4",
+    taskId: "task-4",
     userName: "はると",
     timeAgo: "5時間前",
     taskTitle: "寝る前に本を読む",
     status: "達成！",
-    remainingTime: "達成済み",
     reactions: [],
-    objected: true,
   },
 ];
 
-export function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const requestedFilter = searchParams.get("filter") ?? "all";
-
-  if (requestedFilter !== "all" && requestedFilter !== "objected") {
-    return NextResponse.json(
-      { message: "filterはallまたはobjectedを指定してください。" },
-      { status: 400 },
-    );
-  }
-
-  const filter: FeedFilter = requestedFilter;
-  const filteredPosts = mockPosts.filter(
-    (post) => filter === "all" || post.objected,
-  );
+export function GET() {
+  // 投稿一覧をページ形式で返す。仮データは全件返すため次ページはない。
   const response: FeedResponse = {
-    items: filteredPosts.map(({ objected: _objected, ...post }) => post),
+    items: mockPosts,
     nextCursor: null,
   };
 
