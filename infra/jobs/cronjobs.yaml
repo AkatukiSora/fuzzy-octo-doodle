@@ -1,0 +1,318 @@
+# 定期ジョブ。`infra/kustomization.yaml` の resources に `jobs` を加えるまで、クラスタには展開されない。
+# 実行間隔は暫定値で、業務上の期限に合わせて見直す。
+# Pod のラベルを backend と分けるのは、backend の Service の宛先に含まれないようにするため。
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: expire-initial-tasks
+  labels:
+    app.kubernetes.io/name: backend-jobs
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backend-jobs
+            app.kubernetes.io/part-of: fuzzy-octo-doodle
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: job
+              image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
+              command: [node, dist/jobs-main.js, expire-initial-tasks]
+              env:
+                - name: DATABASE_HOST
+                  value: fuzzy-octo-doodle-db-rw
+                - name: DATABASE_NAME_FILE
+                  value: /etc/database/dbname
+                - name: DATABASE_USER_FILE
+                  value: /etc/database/username
+                - name: DATABASE_PASSWORD_FILE
+                  value: /etc/database/password
+                - name: DATABASE_SSL_MODE
+                  value: verify-full
+                - name: DATABASE_SSL_CA_FILE
+                  value: /etc/database/ca.crt
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: database
+                  mountPath: /etc/database
+                  readOnly: true
+          volumes:
+            - name: database
+              projected:
+                sources:
+                  - secret:
+                      name: fuzzy-octo-doodle-db-app
+                      items:
+                        - key: dbname
+                          path: dbname
+                        - key: username
+                          path: username
+                        - key: password
+                          path: password
+                  - secret:
+                      name: fuzzy-octo-doodle-db-ca
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: close-review-periods
+  labels:
+    app.kubernetes.io/name: backend-jobs
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backend-jobs
+            app.kubernetes.io/part-of: fuzzy-octo-doodle
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: job
+              image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
+              command: [node, dist/jobs-main.js, close-review-periods]
+              env:
+                - name: DATABASE_HOST
+                  value: fuzzy-octo-doodle-db-rw
+                - name: DATABASE_NAME_FILE
+                  value: /etc/database/dbname
+                - name: DATABASE_USER_FILE
+                  value: /etc/database/username
+                - name: DATABASE_PASSWORD_FILE
+                  value: /etc/database/password
+                - name: DATABASE_SSL_MODE
+                  value: verify-full
+                - name: DATABASE_SSL_CA_FILE
+                  value: /etc/database/ca.crt
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: database
+                  mountPath: /etc/database
+                  readOnly: true
+          volumes:
+            - name: database
+              projected:
+                sources:
+                  - secret:
+                      name: fuzzy-octo-doodle-db-app
+                      items:
+                        - key: dbname
+                          path: dbname
+                        - key: username
+                          path: username
+                        - key: password
+                          path: password
+                  - secret:
+                      name: fuzzy-octo-doodle-db-ca
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: expire-additional-evidence
+  labels:
+    app.kubernetes.io/name: backend-jobs
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backend-jobs
+            app.kubernetes.io/part-of: fuzzy-octo-doodle
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: job
+              image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
+              command: [node, dist/jobs-main.js, expire-additional-evidence]
+              env:
+                - name: DATABASE_HOST
+                  value: fuzzy-octo-doodle-db-rw
+                - name: DATABASE_NAME_FILE
+                  value: /etc/database/dbname
+                - name: DATABASE_USER_FILE
+                  value: /etc/database/username
+                - name: DATABASE_PASSWORD_FILE
+                  value: /etc/database/password
+                - name: DATABASE_SSL_MODE
+                  value: verify-full
+                - name: DATABASE_SSL_CA_FILE
+                  value: /etc/database/ca.crt
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: database
+                  mountPath: /etc/database
+                  readOnly: true
+          volumes:
+            - name: database
+              projected:
+                sources:
+                  - secret:
+                      name: fuzzy-octo-doodle-db-app
+                      items:
+                        - key: dbname
+                          path: dbname
+                        - key: username
+                          path: username
+                        - key: password
+                          path: password
+                  - secret:
+                      name: fuzzy-octo-doodle-db-ca
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: expire-stale-upload-sessions
+  labels:
+    app.kubernetes.io/name: backend-jobs
+    app.kubernetes.io/part-of: fuzzy-octo-doodle
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backend-jobs
+            app.kubernetes.io/part-of: fuzzy-octo-doodle
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: job
+              image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
+              command: [node, dist/jobs-main.js, expire-stale-upload-sessions]
+              env:
+                - name: DATABASE_HOST
+                  value: fuzzy-octo-doodle-db-rw
+                - name: DATABASE_NAME_FILE
+                  value: /etc/database/dbname
+                - name: DATABASE_USER_FILE
+                  value: /etc/database/username
+                - name: DATABASE_PASSWORD_FILE
+                  value: /etc/database/password
+                - name: DATABASE_SSL_MODE
+                  value: verify-full
+                - name: DATABASE_SSL_CA_FILE
+                  value: /etc/database/ca.crt
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+              volumeMounts:
+                - name: database
+                  mountPath: /etc/database
+                  readOnly: true
+          volumes:
+            - name: database
+              projected:
+                sources:
+                  - secret:
+                      name: fuzzy-octo-doodle-db-app
+                      items:
+                        - key: dbname
+                          path: dbname
+                        - key: username
+                          path: username
+                        - key: password
+                          path: password
+                  - secret:
+                      name: fuzzy-octo-doodle-db-ca
+                      items:
+                        - key: ca.crt
+                          path: ca.crt
