@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 import type { TaskView } from "../../../domain/task/task-view.ts";
 import type { RetryTemplate } from "../../../application/ports/usecases/get-retry-template.port.ts";
 import type { Page } from "../../../application/ports/task.repository.ts";
@@ -6,6 +8,7 @@ import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } 
 import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
@@ -27,6 +30,15 @@ import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+const createTaskBodySchema = z.object({
+  title: z.string(),
+  achievementCondition: z.string(),
+  evidenceMethod: z.string(),
+  deadlineAt: z.iso.datetime(),
+  penaltyAmount: z.number(),
+  isPenaltyPublic: z.boolean(),
+  originalTaskId: z.uuid().nullable(),
+});
 @Controller("tasks")
 export class TasksController {
   constructor(
@@ -47,10 +59,30 @@ export class TasksController {
    */
   @Post("")
   @HttpCode(201)
-  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<OwnerTaskView> {
-    return todo("TasksController.create");
-  }
-
+create(
+  @CurrentUser() user: UserId,
+  @Headers("idempotency-key") key: string | undefined,
+  @Body() body: unknown,
+): Promise<OwnerTaskView> {
+  const idempotencyKey = parseIdempotencyKey(z.uuid().parse(key));
+  const data = createTaskBodySchema.parse(body);
+  const deadlineAt = new Date(data.deadlineAt);
+  const originalTaskId =
+    data.originalTaskId === null
+      ? null
+      : parseTaskId(data.originalTaskId);
+  return this.createTask.execute({
+    userId: user,
+    idempotencyKey,
+    title: data.title,
+    achievementCondition: data.achievementCondition,
+    evidenceMethod: data.evidenceMethod,
+    deadlineAt,
+    penaltyAmount: data.penaltyAmount,
+    isPenaltyPublic: data.isPenaltyPublic,
+    originalTaskId,
+  });
+}
   /**
    * 認証利用者のタスクを条件付きでカーソルページ取得する。
    *
