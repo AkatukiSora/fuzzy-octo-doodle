@@ -19,7 +19,9 @@ import { parseIdempotencyKey } from "./domain/shared/idempotency.ts";
 const userId = parseUserId("11111111-1111-4111-8111-111111111111");
 const taskId = "11111111-1111-4111-8111-111111111112";
 
-// テスト用のトランザクション
+// Tx は infrastructure だけが生成できる不透明な型。
+// このテストでは中身を使用しないため、既存の get-me.test.ts と同じ方式を使う。
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const tx = {} as Tx;
 
 const uow: UnitOfWork = {
@@ -74,8 +76,9 @@ const idempotency: IdempotencyRepository = {
 
 // イベント発行をテスト用に置き換える
 class FakeTaskEventPublisher extends TaskEventPublisher {
-  override async publish(): Promise<void> {
+  override publish(): Promise<void> {
     // 今回は投稿保存を行わない
+    return Promise.resolve();
   }
 }
 
@@ -122,9 +125,13 @@ test("CreateTask は新しいタスクを1件作成する", async () => {
   const result = await useCase.execute(input);
 
   assert.equal(savedTasks.length, 1);
-  assert.equal(savedTasks[0]?.id, taskId);
-  assert.equal(savedTasks[0]?.status, "active");
-  assert.equal(savedTasks[0]?.title, "勉強する");
+
+  const savedTask = savedTasks[0];
+  assert.ok(savedTask, "タスクが保存されていること");
+
+  assert.equal(savedTask.id, taskId);
+  assert.equal(savedTask.status, "active");
+  assert.equal(savedTask.title, "勉強する");
 
   assert.equal(result.id, taskId);
   assert.equal(result.status, "active");
