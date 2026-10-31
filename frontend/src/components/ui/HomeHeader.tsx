@@ -36,6 +36,7 @@ export function HomeHeader({ onTabChange }: HomeHeaderProps) {
         >
           {tab.label}
         </button>
+        
       ))}
     </div>
   );

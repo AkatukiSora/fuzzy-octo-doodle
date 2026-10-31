@@ -4,9 +4,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "../ui/Card";
 import { ReportMenu } from "../ui/ReportMenu";
+import type { ReactionType } from "../../types/feed";
 import styles from "./CommunityTaskCard.module.css";
 
 interface Reaction {
+  type: ReactionType;
   emoji: string;
   count: number;
   reacted?: boolean;
@@ -21,7 +23,7 @@ interface CommunityTaskCardProps {
   deadlineAt?: string;
   reviewEndsAt?: string;
   reactions: Reaction[];
-  onReactionClick?: (emoji: string) => void;
+  onReactionClick?: (reactionType: ReactionType, reacted: boolean) => void;
   onDetailClick?: () => void;
   onReport?: () => void;
 }
@@ -133,7 +135,7 @@ export function CommunityTaskCard({
                   .filter(Boolean)
                   .join(" ")}
                 onClick={() => {
-                  onReactionClick?.(reaction.emoji);
+                  onReactionClick?.(reaction.type, reaction.reacted ?? false);
                 }}
                 disabled={!onReactionClick}
                 aria-pressed={reaction.reacted ?? false}

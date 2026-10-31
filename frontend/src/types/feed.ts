@@ -1,6 +1,9 @@
 export type FeedFilter = "all" | "objected";
 
+export type ReactionType = "support" | "fire" | "congrats" | "laugh";
+
 export interface FeedReaction {
+  type: ReactionType;
   emoji: string;
   count: number;
   reacted?: boolean;

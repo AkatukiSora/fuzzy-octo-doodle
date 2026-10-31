@@ -13,6 +13,7 @@ import type {
   FeedResponse,
   ObjectionListItem,
   ObjectionListResponse,
+  ReactionType,
 } from "../../types/feed";
 
 async function fetchFeed(signal: AbortSignal): Promise<FeedPost[]> {
@@ -99,9 +100,54 @@ export default function HomePage() {
     return () => controller.abort();
   }, [filter, retryKey]);
 
+  const [reactingPostIds, setReactingPostIds] = useState<Set<FeedPost["id"]>>(
+    () => new Set(),
+  );
+  const [reactionError, setReactionError] = useState<string | null>(null);
+
+  async function handleReaction(
+    postId: FeedPost["id"],
+    reactionType: ReactionType,
+    reacted: boolean,
+  ) {
+    if (reactingPostIds.has(postId)) return;
+
+    setReactingPostIds((current) => new Set(current).add(postId));
+    setReactionError(null);
+
+    try {
+      const response = await fetch(`/api/posts/${postId}/reaction`, {
+        method: reacted ? "DELETE" : "PUT",
+        ...(reacted
+          ? {}
+          : {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reaction_type: reactionType }),
+            }),
+      });
+
+      if (!response.ok) {
+        throw new Error("リアクションを送信できませんでした。");
+      }
+
+      retry();
+    } catch {
+      setReactionError(
+        "リアクションを送信できませんでした。もう一度お試しください。",
+      );
+    } finally {
+      setReactingPostIds((current) => {
+        const next = new Set(current);
+        next.delete(postId);
+        return next;
+      });
+    }
+  }
+
   return (
     <AppLayout title="みんなのタスク">
       <HomeHeader onTabChange={setFilter} />
+      {reactionError && <p role="alert">{reactionError}</p>}
 
       {isLoading ? (
         <Loading message="投稿を読み込んでいます..." />
@@ -128,6 +174,9 @@ export default function HomePage() {
             taskTitle={post.taskTitle}
             status={post.status}
             reactions={post.reactions}
+            onReactionClick={(reactionType, reacted) => {
+              void handleReaction(post.id, reactionType, reacted);
+            }}
             {...(post.avatarUrl !== undefined
               ? { avatarUrl: post.avatarUrl }
               : {})}
