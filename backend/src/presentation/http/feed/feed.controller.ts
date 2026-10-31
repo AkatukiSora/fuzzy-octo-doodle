@@ -10,6 +10,7 @@ import { GetPostUseCase } from "../../../application/usecases/feed/get-post.usec
 import { RemoveReactionUseCase } from "../../../application/usecases/feed/remove-reaction.usecase.ts";
 import { SetReactionUseCase } from "../../../application/usecases/feed/set-reaction.usecase.ts";
 import { todo } from "../../../application/shared/todo.ts"
+import { parsePostId } from "../../../domain/shared/id-parsers.ts";
 /**
  * 責務: タイムラインと投稿リアクションの HTTP 入出力を受け持つ。入力検証と UseCase 呼び出しまでを行い、閲覧権限や保存処理は担わない。
  *
@@ -70,8 +71,8 @@ export class FeedController {
    */
   @Get("posts/:id")
   @HttpCode(200)
-  post(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<FeedItemView> {
-    return todo("FeedController.post");
+    post(@CurrentUser() user: UserId, @Param("id") id: string): Promise<FeedItemView> {
+    return this.getPost.execute({ userId: user, postId: parsePostId(id) });
   }
 
   /**

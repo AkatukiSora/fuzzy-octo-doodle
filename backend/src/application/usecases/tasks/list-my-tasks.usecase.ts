@@ -1,8 +1,7 @@
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { Page } from "../../../application/ports/task.repository.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
-import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
 import type { TaskRepository } from "../../../application/ports/task.repository.ts";
@@ -45,7 +44,20 @@ export class ListMyTasksUseCase {
    * 認証利用者のタスクを条件付きでカーソルページ取得し、本人向け表示型に変換する。検索・絞り込みの意味は repository に委ね、HTTP クエリの検証は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListMyTasksInput): Promise<Page<OwnerTaskView>> {
-    return todo("ListMyTasksUseCase");
+    execute(input: ListMyTasksInput): Promise<Page<OwnerTaskView>> {
+    return this.uow.run(async (tx) => {
+      const page = await this.tasks.listByOwner(tx, {
+        owner: input.userId,
+        view: input.view,
+        limit: input.limit,
+        ...(input.status === undefined ? {} : { status: input.status }),
+        ...(input.search === undefined ? {} : { search: input.search }),
+        ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+      });
+      return {
+        items: page.items.map((task) => toTaskView(task, "owner")),
+        nextCursor: page.nextCursor,
+      };
+    });
   }
 }

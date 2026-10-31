@@ -1,7 +1,7 @@
+import { z } from "zod";
 import type { MyStats } from "../../../domain/user/user-view.ts";
 import type { User } from "../../../domain/user/user.ts";
 import { Body, Controller, Get, HttpCode, Inject, Patch } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { GetMeUseCase } from "../../../application/usecases/me/get-me.usecase.ts";
@@ -58,10 +58,16 @@ export class MeController {
    */
   @Patch("")
   @HttpCode(200)
-  update(@CurrentUser() _user: UserId, @Body() _body: unknown): Promise<User> {
-    return todo("MeController.update");
-  }
+  update(@CurrentUser() user: UserId, @Body() body: unknown): Promise<User> {
+    const { nickname } = z.object({
+      nickname: z.string(),
+    }).parse(body);
 
+    return this.updateMe.execute({
+      userId: user,
+      nickname,
+    });
+  }
   /**
    * 認証利用者本人のタスク実績と達成率を返す。
    *

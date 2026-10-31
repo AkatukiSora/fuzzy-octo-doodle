@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
@@ -44,7 +43,9 @@ export class ListNotificationsUseCase {
    * 認証利用者自身の通知を条件付きでページ取得する。通知の作成や既読更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListNotificationsInput): Promise<Page<Notification>> {
-    return todo("ListNotificationsUseCase");
+  execute(input: ListNotificationsInput): Promise<Page<Notification>> {
+    return this.uow.run((tx) =>
+      this.notifications.list(tx, input.userId, input.filter, input.cursor, input.limit),
+    );
   }
 }

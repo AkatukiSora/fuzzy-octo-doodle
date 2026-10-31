@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { POST_REPOSITORY } from "../../../application/ports/feed.repository.ts";
@@ -62,7 +63,27 @@ export class GetPostUseCase {
    * 指定された投稿が閲覧者本人またはフレンドの投稿であることを確認し、表示用データを返す。投稿の更新は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetPostInput): Promise<FeedItemView> {
-    return todo("GetPostUseCase");
+    execute(input: GetPostInput): Promise<FeedItemView> {
+    return this.uow.run(async (tx) => {
+      const item = await this.posts.findFeedItem(tx, input.postId, input.userId);
+      // 閲覧権限のない投稿の存在を知らせないため、「ない」と「見られない」を同じ NOT_FOUND にする。
+      if (item === null) throw new DomainError("NOT_FOUND", "投稿が見つかりません");
+
+      const task = await this.tasks.findById(tx, item.taskId);
+      const [author] = await this.users.findByIds(tx, [item.post.userId]);
+      if (task === null || author === undefined) {
+        throw new DomainError("NOT_FOUND", "投稿の関連データが見つかりません");
+      }
+
+      return {
+        postId: item.post.id,
+        postType: item.post.postType,
+        postedAt: item.post.createdAt,
+        author: { userId: author.id, nickname: author.nickname },
+        task: toTaskView(task, "friend"),
+        reactionCounts: item.reactionCounts,
+        myReaction: item.myReaction,
+      };
+    });
   }
 }

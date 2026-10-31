@@ -2,14 +2,14 @@ import type { Notification } from "../../../domain/notification/notification.ts"
 import type { Page } from "../../../application/ports/task.repository.ts";
 import type { UnreadCount } from "../../../application/ports/usecases/count-unread-notifications.port.ts";
 import { Controller, Get, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { z } from "zod";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CountUnreadNotificationsUseCase } from "../../../application/usecases/notifications/count-unread-notifications.usecase.ts";
 import { ListNotificationsUseCase } from "../../../application/usecases/notifications/list-notifications.usecase.ts";
 import { MarkAllNotificationsReadUseCase } from "../../../application/usecases/notifications/mark-all-notifications-read.usecase.ts";
 import { MarkNotificationReadUseCase } from "../../../application/usecases/notifications/mark-notification-read.usecase.ts";
-
+import { parseNotificationId } from "../../../domain/shared/id-parsers.ts";
 /**
  * 責務: 通知 API の HTTP 入出力を受け持つ。認証利用者と入力を UseCase に渡し、通知の検索・既読化は UseCase に委ねる。
  *
@@ -24,6 +24,13 @@ import { MarkNotificationReadUseCase } from "../../../application/usecases/notif
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+
+const listQuerySchema = z.object({
+  filter: z.enum(["all", "unread"]).default("all"),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
 @Controller("notifications")
 export class NotificationsController {
   constructor(
@@ -43,8 +50,14 @@ export class NotificationsController {
    */
   @Get("")
   @HttpCode(200)
-  listAll(@CurrentUser() _user: UserId, @Query() _query: Record<string, string | undefined>): Promise<Page<Notification>> {
-    return todo("NotificationsController.listAll");
+  listAll(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<Notification>> {
+        const { filter, cursor, limit } = listQuerySchema.parse(query);
+    return this.listNotifications.execute({
+      userId: user,
+      filter,
+      limit,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
   }
 
   /**
@@ -71,8 +84,8 @@ export class NotificationsController {
    */
   @Post("read-all")
   @HttpCode(204)
-  readAll(@CurrentUser() _user: UserId): Promise<null> {
-    return todo("NotificationsController.readAll");
+  readAll(@CurrentUser() user: UserId): Promise<null> {
+    return this.markAllNotificationsRead.execute({ userId: user });
   }
 
   /**
@@ -85,7 +98,7 @@ export class NotificationsController {
    */
   @Post(":id/read")
   @HttpCode(204)
-  read(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
-    return todo("NotificationsController.read");
+  read(@CurrentUser() user: UserId, @Param("id") id: string): Promise<null> {
+     return this.markNotificationRead.execute({ userId: user, notificationId: parseNotificationId(id) });
   }
 }

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { changeNickname } from "../../../domain/user/user.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -10,34 +11,38 @@ import type { User } from "../../../domain/user/user.ts";
 import type { UpdateMeInput } from "../../ports/usecases/update-me.port.ts";
 
 /**
- * 責務: 認証利用者本人のニックネームを検証して更新する。認証情報や他利用者のプロフィールは変更しない。
+ * 責務: 認証利用者本人のニックネームを検証して更新する。
+ * 認証情報や他利用者のプロフィールは変更しない。
  *
  * 全体の流れ:
  *   PATCH /api/me
- *     → MeController.update（セッション利用者と body を検証）
- *     → この execute
- *     → UserRepository.findById → changeNickname → UserRepository.save
- *     → 更新後の User を返す。
+ *     → MeController.update
+ *     → UpdateMeUseCase.execute
+ *     → UserRepository.findById
+ *     → changeNickname
+ *     → UserRepository.save
+ *     → 更新後の User を返す
  *
  * 処理:
- *   1. UnitOfWork.run の中で UserRepository.findById(tx, userId) を呼び、本人の User を取得する。
- *   2. User がなければ DomainError("NOT_FOUND") を投げる。
- *   3. Clock.now() を取得し、changeNickname(user, nickname, now) を呼ぶ。parseNickname が前後の空白を除き、1〜20文字を検証する。
- *   4. UserRepository.save(tx, updatedUser) を呼び、更新後の User を返す。
+ *   1. UnitOfWork.run 内で認証利用者の User を取得する。
+ *   2. User が存在しなければ DomainError("NOT_FOUND") を投げる。
+ *   3. Clock.now() で現在時刻を取得する。
+ *   4. changeNickname() でニックネームを検証・変更する。
+ *   5. UserRepository.save() で保存し、更新後の User を返す。
  *
  * 失敗:
- *   - DomainError("NOT_FOUND"): 認証利用者に対応する User が保存されていない。
- *   - DomainError("VALIDATION_ERROR"): ニックネームが空、または前後の空白を除いて20文字を超える。
- *
- * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
+ *   - NOT_FOUND: 認証利用者に対応する User が存在しない。
+ *   - VALIDATION_ERROR: ニックネームが空、または20文字を超える。
  */
 @Injectable()
 export class UpdateMeUseCase {
   /** プロフィールの取得と保存を同じトランザクションにまとめる。 */
   protected readonly uow: UnitOfWork;
-  /** プロフィールの updatedAt に使う現在時刻を取得する。 */
+
+  /** プロフィールの更新日時に使用する現在時刻を取得する。 */
   protected readonly clock: Clock;
-  /** 本人のプロフィールを取得し、更新後の User を保存する。 */
+
+  /** ユーザー情報の取得と保存を行う。 */
   protected readonly users: UserRepository;
 
   constructor(
@@ -51,10 +56,32 @@ export class UpdateMeUseCase {
   }
 
   /**
-   * 認証利用者本人のニックネームを検証して更新する。認証情報や他利用者のプロフィールは変更しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 認証利用者本人のニックネームを更新する。
+   *
+   * @param input 認証利用者のIDと変更後のニックネーム
+   * @returns 更新後のユーザー情報
    */
-  execute(_input: UpdateMeInput): Promise<User> {
-    return todo("UpdateMeUseCase");
+  execute(input: UpdateMeInput): Promise<User> {
+    return this.uow.run(async (tx) => {
+      // 1. 認証利用者の情報を取得する
+      const user = await this.users.findById(tx, input.userId);
+
+      // 2. ユーザーが存在しない場合はエラー
+      if (user === null) {
+        throw new DomainError("NOT_FOUND", "利用者が見つかりません");
+      }
+
+      // 3. 現在時刻を取得する
+      const now = this.clock.now();
+
+      // 4. ニックネームを検証して更新する
+      const updatedUser = changeNickname(user, input.nickname, now);
+
+      // 5. 更新後のユーザー情報をDBに保存する
+      await this.users.save(tx, updatedUser);
+
+      // 6. 更新後のユーザー情報を返す
+      return updatedUser;
+    });
   }
 }
