@@ -12,6 +12,7 @@ import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-ta
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
 import { ListMyTasksUseCase } from "../../../application/usecases/tasks/list-my-tasks.usecase.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 
 /**
  * 責務: /api/tasks のタスク作成・本人一覧・詳細・再挑戦テンプレートについて、HTTP 入力の検証と対応するユースケースの呼び出しを担う。業務ルールや永続化は担わない。
@@ -112,7 +113,13 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
-    return todo("TasksController.get");
+  get(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+  ): Promise<TaskView> {
+    return this.getTask.execute({
+      viewerId: user,
+      taskId: parseTaskId(id),
+    });
   }
 }
