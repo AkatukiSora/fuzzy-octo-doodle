@@ -71,19 +71,19 @@ function setup(task: Task | null) {
     inviteToken: () => "unused",
   } satisfies IdGenerator;
 
-  const tasks = {
-    findById: async (_tx: Tx, id: typeof TASK_ID) => {
-      assert.equal(id, TASK_ID);
-      return task;
-    },
-  };
+const tasks = {
+  findById: (_tx: Tx, id: typeof TASK_ID) => {
+    assert.equal(id, TASK_ID);
+    return Promise.resolve(task);
+  },
+};
 
-  const uploadSessions = {
-    insert: async (_tx: Tx, session: UploadingSession) => {
-      saved.push(session);
-    },
-  };
-
+const uploadSessions = {
+  insert: (_tx: Tx, session: UploadingSession) => {
+    saved.push(session);
+    return Promise.resolve();
+  },
+};
   const useCase = new StartEvidenceUploadSessionUseCase(
     uow,
     clock,
