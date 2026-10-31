@@ -10,6 +10,8 @@ import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evi
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
+import { z } from "zod";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。
@@ -90,9 +92,18 @@ export class EvidenceController {
    * 呼び出し先: ListEvidencesUseCase.execute
    * 主な失敗: NOT_FOUND、FORBIDDEN
    */
-  @Get("evidences")
-  @HttpCode(200)
-  list(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<EvidenceListResult> {
-    return todo("EvidenceController.list");
-  }
+@Get("evidences")
+@HttpCode(200)
+list(
+  @CurrentUser() user: UserId,
+  @Param("id") id: string,
+): Promise<EvidenceListResult> {
+const validatedId = z.uuid().parse(id);
+  const taskId = parseTaskId(validatedId);
+
+  return this.listEvidences.execute({
+    viewerId: user,
+    taskId,
+  });
+}
 }
