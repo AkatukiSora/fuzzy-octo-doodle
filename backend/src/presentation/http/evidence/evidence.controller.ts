@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import type { UploadUrlsResult } from "../../../application/ports/usecases/issue-upload-urls.port.ts";
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
@@ -10,7 +11,7 @@ import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evi
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
-
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。
  *
@@ -47,8 +48,16 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions")
   @HttpCode(201)
-  startSession(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<UploadingSession> {
-    return todo("EvidenceController.startSession");
+ startSession(@CurrentUser() user: UserId, @Param("id") id: string, @Body() body: unknown): Promise<UploadingSession> {
+  const { submissionType } = z.object({
+    submissionType: z.enum(["initial", "additional"]),
+  }).parse(body);  
+  const taskId = parseTaskId(id);
+    return this.startEvidenceUploadSession.execute({
+      userId: user,
+      taskId,
+      submissionType,
+    });
   }
 
   /**
