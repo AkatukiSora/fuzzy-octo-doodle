@@ -1,3 +1,8 @@
+import { z } from "zod";
+import {
+  parseTaskId,
+  parseUploadSessionId,
+} from "../../../domain/shared/id-parsers.ts";
 import type { UploadingSession } from "../../../domain/evidence/upload-session.ts";
 import type { UploadUrlsResult } from "../../../application/ports/usecases/issue-upload-urls.port.ts";
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
@@ -62,10 +67,31 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions/:sessionId/upload-urls")
   @HttpCode(200)
-  issueUrls(@CurrentUser() _user: UserId, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<UploadUrlsResult> {
-    return todo("EvidenceController.issueUrls");
-  }
+ issueUrls(
+  @CurrentUser() user: UserId,
+  @Param("id") id: string,
+  @Param("sessionId") sessionId: string,
+  @Body() body: unknown,
+): Promise<UploadUrlsResult> {
+  const { photos } = z.object({
+    photos: z.array(
+      z.object({
+        slot: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+        extension: z.enum(["jpg", "png", "webp"]),
+      }),
+    ).min(1).max(3).refine(
+      (photos) => new Set(photos.map((photo) => photo.slot)).size === photos.length,
+      "写真の枠番号は重複できません",
+    ),
+  }).parse(body);
 
+  return this.issueUploadUrls.execute({
+    userId: user,
+    taskId: parseTaskId(id),
+    sessionId: parseUploadSessionId(sessionId),
+    photos,
+  });
+}
   /**
    * アップロード済み写真を検証し、証拠提出とタスク更新を確定する。
    *
