@@ -1,5 +1,6 @@
 import * as UI from "../../../components/ui";
 import Link from "next/link";
+import Image from "next/image";
 import "./login.css";
 
 export default function LoginPage() {
@@ -7,7 +8,13 @@ export default function LoginPage() {
     <main className="login-page">
       <section className="login-container" aria-labelledby="login-title">
         <header className="login-brand">
-          {/* //素材挿入箇所 */}
+          <Image
+            src="/images/donee-login-brand.png"
+            alt="Donee"
+            width={768}
+            height={768}
+            priority
+          />
         </header>
 
         <div className="login-form">
@@ -24,7 +31,6 @@ export default function LoginPage() {
           </div>
 
           <div className="login-field">
-            <span className="login-field-icon login-lock-icon" aria-hidden="true" />
             <UI.Input
               className="login-input"
               id="password"
