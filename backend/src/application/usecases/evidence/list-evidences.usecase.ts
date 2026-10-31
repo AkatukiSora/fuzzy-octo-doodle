@@ -1,6 +1,5 @@
 import type { EvidenceListResult } from "../../ports/usecases/list-evidences.port.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
@@ -12,6 +11,8 @@ import type { FriendshipRepository } from "../../../application/ports/friendship
 import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.ts";
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
 import type { ListEvidencesInput } from "../../ports/usecases/list-evidences.port.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { viewerRole, authorizePhotoAccess } from "../../../domain/task/visibility-policy.ts";
 
 /**
  * 責務: 本人または許可されたフレンドに証拠一覧と写真の短期閲覧 URL を返す。権限のない利用者には URL を発行しない。
@@ -72,7 +73,56 @@ export class ListEvidencesUseCase {
    * 本人または許可されたフレンドに証拠一覧と写真の短期閲覧 URL を返す。権限のない利用者には URL を発行しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListEvidencesInput): Promise<EvidenceListResult> {
-    return todo("ListEvidencesUseCase");
-  }
+execute(input: ListEvidencesInput): Promise<EvidenceListResult> {
+  return this.uow.run(async (tx) => {
+    // 1. タスクを取得
+    const task = await this.tasks.findById(tx, input.taskId);
+
+    if (!task) {
+      throw new DomainError("NOT_FOUND", "Task not found");
+    }
+
+    // 2. 閲覧者の役割を確認
+    const isFriend = await this.friendships.areFriends(
+      tx,
+      task.ownerId,
+      input.viewerId,
+    );
+
+    const role = viewerRole(task.ownerId, input.viewerId, isFriend);
+
+    if (role === "none") {
+      throw new DomainError("NOT_FOUND", "Task not found");
+    }
+
+    // 3. 写真の閲覧権限を確認
+    const grant = authorizePhotoAccess(task, role);
+
+    if (grant === null) {
+      throw new DomainError("FORBIDDEN", "Photo access denied");
+    }
+
+    // 4. 証拠一覧を取得
+    const evidences = await this.evidences.listByTask(tx, input.taskId);
+
+    // 5. 写真の閲覧URLを発行
+    const items = await Promise.all(
+      evidences.map(async (evidence) => {
+        const photoUrls = await Promise.all(
+          evidence.photos.map((path) =>
+            this.storage.createSignedReadUrl(grant, path, 60),
+          ),
+        );
+
+        return {
+          submissionType: evidence.submissionType,
+          submittedAt: evidence.submittedAt,
+          photoUrls,
+        };
+      }),
+    );
+
+    return { evidences: items };
+  });
+}
 }
