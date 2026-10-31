@@ -1,6 +1,5 @@
 import type { TaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
@@ -8,6 +7,9 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import type { GetTaskInput } from "../../ports/usecases/get-task.port.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { viewerRole } from "../../../domain/task/visibility-policy.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
 
 /**
  * 責務: タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
@@ -52,9 +54,38 @@ export class GetTaskUseCase {
 
   /**
    * タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 上の「処理」の順に、トランザクション内でタスク取得・権限判定・表示データ生成を行う。
    */
-  execute(_input: GetTaskInput): Promise<TaskView> {
-    return todo("GetTaskUseCase");
+  execute(input: GetTaskInput): Promise<TaskView> {
+    return this.uow.run(async (tx) => {
+      // 1. タスクを取得する
+      const task = await this.tasks.findById(tx, input.taskId);
+
+      if (task === null) {
+        throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+      }
+
+      // 2. 所有者と閲覧者のフレンド関係を確認する
+      const isFriend = await this.friendships.areFriends(
+        tx,
+        task.ownerId,
+        input.viewerId,
+      );
+
+      // 3. 閲覧者の立場を判定する
+      const role = viewerRole(
+        task.ownerId,
+        input.viewerId,
+        isFriend,
+      );
+
+      // 4. 本人でもフレンドでもなければ閲覧を拒否する
+      if (role === "none") {
+        throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+      }
+
+      // 5. 閲覧者に応じた安全なTaskViewを返す
+      return toTaskView(task, role);
+    });
   }
 }
