@@ -1,6 +1,17 @@
+import { hashRequest } from "../../shared/request-hash.ts";
+import {
+  authorizeTaskCreation,
+  parseTaskDeadline,
+} from "../../../domain/task/task-policy.ts";
+import { z } from "zod";
+import { parseUserId } from "../../../domain/shared/id-parsers.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
+import { createTask } from "../../../domain/task/task.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -53,6 +64,53 @@ import type { CreateTaskInput } from "../../ports/usecases/create-task.port.ts";
  *
  * この層（application）は NestJS の HTTP を知らない。入力は Input、結果は Output、失敗は DomainError だけで表す。
  */
+const savedTaskResponseSchema = z.object({
+  id: z.string(),
+  ownerId: z.string(),
+  title: z.string(),
+  achievementCondition: z.string(),
+  evidenceMethod: z.string(),
+  deadlineAt: z.iso.datetime(),
+  status: z.enum([
+    "active",
+    "reviewing",
+    "disputed",
+    "success",
+    "failed",
+    "indeterminate",
+    "closed",
+  ]),
+  isPenaltyPublic: z.boolean(),
+  createdAt: z.iso.datetime(),
+  viewer: z.literal("owner"),
+  penaltyAmount: z.number(),
+});
+function restoreSavedTaskResponse(body: unknown): OwnerTaskView {
+  const result = savedTaskResponseSchema.safeParse(body);
+
+  if (!result.success) {
+    throw new DomainError(
+      "STATE_CONFLICT",
+      "保存済みのタスク作成レスポンスが不正です",
+    );
+  }
+
+  const data = result.data;
+
+  return {
+    id: parseTaskId(data.id),
+    ownerId: parseUserId(data.ownerId),
+    title: data.title,
+    achievementCondition: data.achievementCondition,
+    evidenceMethod: data.evidenceMethod,
+    deadlineAt: new Date(data.deadlineAt),
+    status: data.status,
+    isPenaltyPublic: data.isPenaltyPublic,
+    createdAt: new Date(data.createdAt),
+    viewer: data.viewer,
+    penaltyAmount: data.penaltyAmount,
+  };
+}
 @Injectable()
 export class CreateTaskUseCase {
   /** 冪等性予約、タスク作成、投稿保存をまとめて確定またはロールバックするトランザクション境界である。 */
@@ -92,7 +150,79 @@ export class CreateTaskUseCase {
    * 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateTaskInput): Promise<OwnerTaskView> {
-    return todo("CreateTaskUseCase");
+execute(input: CreateTaskInput): Promise<OwnerTaskView> {
+  const now = this.clock.now();
+  const key = parseIdempotencyKey(input.idempotencyKey);
+
+  const requestHash = hashRequest("create_task", {
+    title: input.title,
+    achievementCondition: input.achievementCondition,
+    evidenceMethod: input.evidenceMethod,
+    originalTaskId: input.originalTaskId,
+  });
+
+return this.uow.run(async (tx) => {
+  const existing = await this.idempotency.reserve(
+    tx,
+    input.userId,
+    "create_task",
+    key,
+    requestHash,
+    now,
+  );
+ if (existing !== null) {
+  if (existing.requestHash !== requestHash) {
+    throw new DomainError(
+      "IDEMPOTENCY_KEY_REUSED",
+      "同じIdempotency-Keyが異なるリクエスト内容に使用されています",
+    );
   }
+
+  if (existing.responseStatus === 201) {
+    return restoreSavedTaskResponse(existing.responseBody);
+  }
+
+  throw new DomainError(
+    "STATE_CONFLICT",
+    "このリクエストは処理中、または正常に完了していません",
+  );
+}
+  await this.payment.assertCanCreateTask(input.userId);
+  await this.tasks.lockUserForCreation(tx, input.userId);
+  const activeCount = await this.tasks.countActiveInitial(
+  tx,
+  input.userId,
+);
+const permit = authorizeTaskCreation(activeCount);
+const deadline = parseTaskDeadline(input.deadlineAt, now);
+const taskId = parseTaskId(this.ids.uuid());
+const { next, events } = createTask(
+  {
+    id: taskId,
+    ownerId: input.userId,
+    originalTaskId: input.originalTaskId,
+    title: input.title,
+    achievementCondition: input.achievementCondition,
+    evidenceMethod: input.evidenceMethod,
+    deadlineAt: deadline,
+    penaltyAmount: input.penaltyAmount,
+    isPenaltyPublic: input.isPenaltyPublic,
+    permit,
+  },
+  now,
+);
+await this.tasks.insert(tx, next);
+await this.events.publish(tx, events);
+const response = toTaskView(next, "owner");
+await this.idempotency.complete(
+  tx,
+  input.userId,
+  "create_task",
+  key,
+  201,
+  response,
+);
+ return response;
+});
+}
 }
