@@ -165,10 +165,8 @@ export default function EvidenceSubmittedPage({
             )}）。`,
           );
         }
-        const [task, evidences]: [unknown, unknown] = await Promise.all([
-          taskResponse.json(),
-          evidenceResponse.json(),
-        ]);
+        const task: unknown = await taskResponse.json();
+        const evidences: unknown = await evidenceResponse.json();
         const submittedEvidence = parseSubmittedEvidence(task, evidences);
         if (!cancelled) setResult(submittedEvidence);
       } catch (loadError) {
