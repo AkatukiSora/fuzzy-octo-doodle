@@ -194,7 +194,9 @@ export default function ConfirmTaskPage() {
               <input
                 type="checkbox"
                 checked={skipApi}
-                onChange={(event) => setSkipApi(event.target.checked)}
+                onChange={(event) => {
+                  setSkipApi(event.target.checked);
+                }}
               />
               <span>
                 <span className={styles["skipApiLabel"]}>
@@ -210,7 +212,9 @@ export default function ConfirmTaskPage() {
               <button
                 type="button"
                 className={styles["confirmButton"]}
-                onClick={handleConfirm}
+                onClick={() => {
+                  void handleConfirm();
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "送信中..." : "確定"}
