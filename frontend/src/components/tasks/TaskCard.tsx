@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import type { TaskStatus } from "../../types/task";
 import { TaskStatusBadge } from "./TaskStatusBadge";
 import styles from "./TaskCard.module.css";
@@ -34,6 +35,8 @@ export function TaskCard({
   onClick,
   onMenuClick,
 }: TaskCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <article className={styles["card"]}>
       <span
@@ -84,15 +87,33 @@ export function TaskCard({
         </div>
       </div>
 
-      {onMenuClick && (
-        <button
-          type="button"
-          className={styles["menuButton"]}
-          onClick={onMenuClick}
-          aria-label={`${title}のメニューを開く`}
-        >
-          ⋯
-        </button>
+      <button
+        type="button"
+        className={styles["menuButton"]}
+        onClick={() => {
+          setMenuOpen((open) => !open);
+          onMenuClick?.();
+        }}
+        aria-label={`${title}のメニューを開く`}
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+      >
+        ⋯
+      </button>
+
+      {menuOpen && onClick && (
+        <div className={styles["menu"]} role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              onClick();
+            }}
+          >
+            詳細を見る
+          </button>
+        </div>
       )}
     </article>
   );

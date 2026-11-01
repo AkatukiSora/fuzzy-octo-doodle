@@ -6,7 +6,8 @@ type TaskSectionStatus =
   | "active"
   | "reviewing"
   | "success"
-  | "failed";
+  | "failed"
+  | "other";
 
 interface TaskSectionProps {
   status: TaskSectionStatus;
@@ -19,6 +20,7 @@ const sectionConfig = {
   reviewing: "審査中",
   success: "完了",
   failed: "失敗",
+  other: "その他",
 };
 
 export function TaskSection({

@@ -1,6 +1,7 @@
 
 import { Badge } from "../ui/Badge";
 import type { TaskStatus } from "../../types/task";
+import styles from "./TaskStatusBadge.module.css";
 
 interface TaskStatusBadgeProps {
   status: TaskStatus;
@@ -41,7 +42,7 @@ export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
   const config = statusConfig[status];
 
   return (
-    <Badge variant={config.variant}>
+    <Badge variant={config.variant} className={styles["badge"]}>
       {config.label}
     </Badge>
   );
