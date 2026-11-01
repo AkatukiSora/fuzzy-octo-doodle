@@ -1,6 +1,8 @@
 import type { TaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
+import { viewerRole } from "../../../domain/task/visibility-policy.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { TASK_REPOSITORY } from "../../../application/ports/task.repository.ts";
@@ -52,9 +54,23 @@ export class GetTaskUseCase {
 
   /**
    * タスク詳細を読む利用者の関係に応じて閲覧権限を決め、安全な TaskView を返す。HTTP 応答への変換と保存は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: GetTaskInput): Promise<TaskView> {
-    return todo("GetTaskUseCase");
+  execute(input: GetTaskInput): Promise<TaskView> {
+    return this.uow.run(async (tx) => {
+      const task = await this.tasks.findById(tx, input.taskId);
+      if (!task) {
+        throw new DomainError("NOT_FOUND", "タスクが見つかりません。");
+      }
+
+      const isFriend =
+        task.ownerId !== input.viewerId &&
+        await this.friendships.areFriends(tx, task.ownerId, input.viewerId);
+      const role = viewerRole(task.ownerId, input.viewerId, isFriend);
+      if (role === "none") {
+        throw new DomainError("NOT_FOUND", "タスクが見つかりません。");
+      }
+
+      return toTaskView(task, role);
+    });
   }
 }

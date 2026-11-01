@@ -11,6 +11,16 @@
   box-shadow: 0 2px 10px rgb(31 48 78 / 3%);
 }
 
+.clickable {
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.clickable:hover {
+  border-color: #d7cdf8;
+  box-shadow: 0 4px 14px rgb(31 48 78 / 8%);
+}
+
 .statusIcon {
   display: flex;
   align-items: center;

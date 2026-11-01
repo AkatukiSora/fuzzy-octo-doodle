@@ -38,7 +38,20 @@ export function TaskCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <article className={styles["card"]}>
+    <article
+      className={[
+        styles["card"],
+        onClick ? styles["clickable"] : "",
+      ].filter(Boolean).join(" ")}
+      onClick={(event) => {
+        if (
+          onClick &&
+          !(event.target instanceof Element && event.target.closest("button"))
+        ) {
+          onClick();
+        }
+      }}
+    >
       <span
         className={`${styles["statusIcon"] ?? ""} ${styles[status] ?? ""}`}
         aria-hidden="true"
