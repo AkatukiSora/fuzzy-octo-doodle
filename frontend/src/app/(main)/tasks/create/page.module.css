@@ -1,0 +1,384 @@
+.screen {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  color: #101a33;
+}
+
+.formCard {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin: 0 16px 14px;
+  padding: 16px;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgb(16 26 51 / 3%);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fieldset {
+  width: 100%;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.label {
+  color: #101a33;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.requiredBadge,
+.optionalBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.requiredBadge {
+  background: #fff0f1;
+  color: #f04e5e;
+}
+
+.optionalBadge {
+  background: #f0f2f6;
+  color: #47516a;
+}
+
+.textInput,
+.inputWithIcon {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #f5f6f9;
+  color: #101a33;
+  font: inherit;
+}
+
+.textInput {
+  min-height: 48px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+
+.textInput::placeholder {
+  color: #a7afc1;
+  opacity: 1;
+}
+
+.textInput:focus,
+.inputWithIcon:focus-within {
+  border-color: var(--color-primary);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgb(121 85 199 / 12%);
+}
+
+.textarea {
+  min-height: 104px;
+  padding: 12px 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.counter {
+  align-self: flex-end;
+  margin: -3px 0 0;
+  color: #8790a5;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.fieldIcon,
+.evidenceIcon,
+.visibilityIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldIcon {
+  width: 28px;
+  height: 28px;
+  margin-right: 12px;
+  color: #778198;
+}
+
+.fieldIcon svg,
+.evidenceIcon svg,
+.visibilityIcon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.dateInput,
+.numberInput {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #101a33;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.dateInput {
+  appearance: none;
+}
+
+.numberInput {
+  appearance: textfield;
+}
+
+.numberInput::-webkit-inner-spin-button,
+.numberInput::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.currency {
+  margin-left: 10px;
+  color: #68728a;
+  font-size: 15px;
+}
+
+.evidenceOption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 80px;
+  padding: 12px 16px;
+  border: 1.5px solid #8a5aff;
+  border-radius: 12px;
+  background: #faf7ff;
+  cursor: pointer;
+}
+
+.evidenceOption input,
+.visibilityOption input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.evidenceOption:focus-within,
+.visibilityOption:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.evidenceIcon {
+  width: 44px;
+  height: 44px;
+  color: #7136f5;
+}
+
+.evidenceIcon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.optionText,
+.visibilityText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.optionTitle {
+  color: #7136f5;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.optionDescription {
+  color: #79839a;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.hint {
+  margin: 0;
+  color: #7d879e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.visibilityOptions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.visibilityOption {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 88px;
+  padding: 12px 10px;
+  border: 1px solid #e8ebf1;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.visibilityOption.selected {
+  border-color: #8a5aff;
+  background: #faf7ff;
+}
+
+.visibilityIcon {
+  width: 30px;
+  height: 34px;
+  color: #7f899e;
+}
+
+.selected .visibilityIcon {
+  color: #7136f5;
+}
+
+.visibilityIcon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.visibilityText {
+  flex: 1;
+  padding-top: 1px;
+}
+
+.visibilityText .optionTitle {
+  color: #101a33;
+}
+
+.selected .visibilityText .optionTitle {
+  color: #7136f5;
+}
+
+.visibilityText .optionDescription {
+  font-size: 12px;
+}
+
+.radioMark {
+  position: relative;
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  margin-top: 1px;
+  border: 2px solid #c8ced9;
+  border-radius: 50%;
+}
+
+.selected .radioMark {
+  border-color: #7136f5;
+}
+
+.selected .radioMark::after {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #7136f5;
+  content: "";
+}
+
+.submitButton {
+  width: 100%;
+  min-height: 58px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(110deg, #6530f4, #5123eb);
+  box-shadow: 0 4px 10px rgb(83 37 236 / 16%);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.submitButton:focus-visible {
+  outline: 3px solid rgb(121 85 199 / 40%);
+  outline-offset: 3px;
+}
+
+.submitButton:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 420px) {
+  .formCard {
+    gap: 19px;
+    margin: 0 10px 12px;
+    padding: 14px;
+  }
+
+  .label {
+    font-size: 15px;
+  }
+
+  .visibilityOptions {
+    gap: 8px;
+  }
+
+  .visibilityOption {
+    gap: 7px;
+    padding: 10px 8px;
+  }
+
+  .visibilityText .optionTitle {
+    font-size: 14px;
+  }
+
+  .visibilityText .optionDescription {
+    font-size: 11px;
+  }
+}
