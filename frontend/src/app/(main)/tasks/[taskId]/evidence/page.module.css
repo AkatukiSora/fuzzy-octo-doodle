@@ -1,0 +1,153 @@
+.screen {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  padding: 8px 22px 28px;
+}
+
+.taskSummary {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #faf8f6;
+}
+
+.taskLabel {
+  display: block;
+  color: #8992ad;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.taskTitle {
+  margin: 7px 0 10px;
+  color: #111a34;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #8992ad;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.deadline svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.memoField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memoLabel {
+  color: #101a33;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.memoLabel span {
+  font-weight: 650;
+}
+
+.memoInputWrap {
+  position: relative;
+}
+
+.memoInput {
+  display: block;
+  width: 100%;
+  min-height: 158px;
+  padding: 14px 16px 34px;
+  box-sizing: border-box;
+  border: 1px solid #e6e7ef;
+  border-radius: 14px;
+  background: #fff;
+  color: #17213a;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.memoInput::placeholder {
+  color: #b7bbcc;
+}
+
+.memoInput:focus-visible {
+  border-color: var(--color-primary);
+  outline: 2px solid rgb(121 85 199 / 15%);
+}
+
+.memoCount {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  color: #9298b2;
+  font-size: 13px;
+  font-weight: 650;
+  pointer-events: none;
+}
+
+.submitButton {
+  width: 100%;
+  min-height: 54px;
+  margin-top: -1px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #8062f5, #7454f3);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.submitButton:hover {
+  filter: brightness(1.04);
+}
+
+.submitButton:focus-visible {
+  outline: 3px solid rgb(121 85 199 / 35%);
+  outline-offset: 3px;
+}
+
+.submitMessage {
+  margin: -20px 0 0;
+  color: #6f7690;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 400px) {
+  .content {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .taskTitle {
+    font-size: 19px;
+  }
+}

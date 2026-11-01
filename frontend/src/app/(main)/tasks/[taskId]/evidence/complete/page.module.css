@@ -1,0 +1,219 @@
+.screen {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 22px 28px;
+}
+
+.successMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 16px;
+  text-align: center;
+}
+
+.successIcon {
+  width: 104px;
+  height: 104px;
+  overflow: visible;
+  stroke: #8561f6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.successIcon circle {
+  stroke-width: 6;
+}
+
+.successIcon path:last-child {
+  stroke: #b6a0ff;
+  stroke-width: 3;
+}
+
+.successMessage h2 {
+  margin: 8px 0 3px;
+  color: #111a34;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.successMessage p {
+  margin: 0;
+  color: #8992ad;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.taskSummary {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #faf8f6;
+}
+
+.taskLabel {
+  display: block;
+  color: #8992ad;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.taskTitle {
+  margin: 7px 0 10px;
+  color: #111a34;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.deadline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #8992ad;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.deadline svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+}
+
+.evidenceCard {
+  padding: 14px 16px 16px;
+  border-radius: 14px;
+  background: #f8f7fd;
+}
+
+.evidenceHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.evidenceHeading h3 {
+  margin: 0;
+  color: #17213a;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.evidenceHeading span {
+  color: #8992ad;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.photo {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: #edeaf5;
+  object-fit: cover;
+}
+
+.statusCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #eceaf3;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.statusIcon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f4efff;
+  color: #7136f5;
+}
+
+.statusIcon svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.statusDetails {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.statusLabel {
+  color: #8992ad;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.statusDetails p {
+  margin: 1px 0 0;
+  color: #8992ad;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.backLink {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #6d3ff5, #744cff);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.backLink:focus-visible {
+  outline: 3px solid rgb(121 85 199 / 35%);
+  outline-offset: 3px;
+}
+
+@media (max-width: 400px) {
+  .content {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .successMessage h2 {
+    font-size: 21px;
+  }
+
+  .taskTitle {
+    font-size: 19px;
+  }
+}

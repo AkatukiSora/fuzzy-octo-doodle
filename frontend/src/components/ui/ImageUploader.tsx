@@ -5,6 +5,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import styles from "./ImageUploader.module.css";
 
+const supportedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 interface ImageUploaderProps {
   images: File[];
   onChange: (images: File[]) => void;
@@ -49,11 +51,11 @@ export function ImageUploader({
     if (files.length === 0) return;
 
     const validFiles = files.filter((file) =>
-      file.type.startsWith("image/")
+      supportedImageTypes.has(file.type)
     );
 
     if (validFiles.length !== files.length) {
-      setInternalError("画像ファイルを選択してください。");
+      setInternalError("JPEG・PNG・WebP形式の画像を選択してください。");
       event.target.value = "";
       return;
     }
@@ -110,7 +112,7 @@ export function ImageUploader({
         ref={inputRef}
         id={inputId}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         multiple={maxImages > 1}
         onChange={handleSelect}
         disabled={disabled}

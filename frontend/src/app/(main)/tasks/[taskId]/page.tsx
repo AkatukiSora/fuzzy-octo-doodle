@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
 import { TaskStatusBadge } from "../../../../components/tasks/TaskStatusBadge";
@@ -118,6 +119,7 @@ export default function TaskDetailPage({
   params: Promise<{ taskId: string }>;
 }) {
   const { taskId } = use(params);
+  const router = useRouter();
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -254,7 +256,13 @@ export default function TaskDetailPage({
                 </span>
               </div>
               {isActive && task.viewer === "owner" && (
-                <button className={styles["submitButton"]} type="button" disabled>
+                <button
+                  className={styles["submitButton"]}
+                  type="button"
+                  onClick={() => {
+                    router.push(`/tasks/${encodeURIComponent(task.id)}/evidence`);
+                  }}
+                >
                   <span aria-hidden="true">▧</span>
                   証拠を提出する
                 </button>
