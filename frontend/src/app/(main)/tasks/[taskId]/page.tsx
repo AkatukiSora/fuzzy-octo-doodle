@@ -170,7 +170,9 @@ export default function TaskDetailPage({
         ) : error ? (
           <ErrorState
             description={error}
-            onRetry={() => setReloadKey((key) => key + 1)}
+            onRetry={() => {
+              setReloadKey((key) => key + 1);
+            }}
           />
         ) : task ? (
           <main className={styles["content"]}>
