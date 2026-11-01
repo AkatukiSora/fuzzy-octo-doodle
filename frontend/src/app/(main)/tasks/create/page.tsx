@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
@@ -96,7 +96,7 @@ export default function CreateTaskPage() {
     setVisibility(parsedDraft.visibility);
   }, []);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const draft: TaskDraft = {
