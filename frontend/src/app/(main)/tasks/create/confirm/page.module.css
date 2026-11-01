@@ -47,6 +47,40 @@
   white-space: pre-wrap;
 }
 
+.skipApiOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  color: #101a33;
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.skipApiOption input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: #7136f5;
+  flex: 0 0 auto;
+}
+
+.skipApiLabel,
+.skipApiDescription {
+  display: block;
+}
+
+.skipApiLabel {
+  font-weight: 600;
+}
+
+.skipApiDescription {
+  margin-top: 3px;
+  color: #79839a;
+  font-size: 12px;
+}
+
 .actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -72,6 +106,11 @@
 
 .confirmButton {
   background: #7136f5;
+}
+
+.confirmButton:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .editButton {

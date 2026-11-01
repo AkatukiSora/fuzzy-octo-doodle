@@ -6,6 +6,7 @@ import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
 import {
   isTaskDraft,
+  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
   TASK_DRAFT_STORAGE_KEY,
   type TaskDraft,
   type TaskVisibility,
@@ -65,7 +66,7 @@ export default function CreateTaskPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [deadline, setDeadline] = useState("2025-04-20T23:59");
+  const [deadline, setDeadline] = useState("");
   const [reward, setReward] = useState("500");
   const [visibility, setVisibility] = useState<TaskVisibility>("private");
   const [draftError, setDraftError] = useState("");
@@ -73,6 +74,14 @@ export default function CreateTaskPage() {
   useEffect(() => {
     const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
     if (!storedDraft) {
+      const defaultDeadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const localDeadline = new Date(
+        defaultDeadline.getTime() -
+          defaultDeadline.getTimezoneOffset() * 60 * 1000,
+      )
+        .toISOString()
+        .slice(0, 16);
+      setDeadline(localDeadline);
       return;
     }
 
@@ -106,6 +115,7 @@ export default function CreateTaskPage() {
       reward,
       visibility,
     };
+    window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
     window.sessionStorage.setItem(
       TASK_DRAFT_STORAGE_KEY,
       JSON.stringify(draft),
@@ -131,6 +141,9 @@ export default function CreateTaskPage() {
               type="text"
               value={title}
               onChange={(event) => {
+                window.sessionStorage.removeItem(
+                  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                );
                 setTitle(event.target.value);
               }}
               placeholder="タスク名を入力してください"
@@ -153,6 +166,9 @@ export default function CreateTaskPage() {
               ].join(" ")}
               value={description}
               onChange={(event) => {
+                window.sessionStorage.removeItem(
+                  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                );
                 setDescription(event.target.value);
               }}
               placeholder="タスクの詳細を入力してください"
@@ -176,6 +192,9 @@ export default function CreateTaskPage() {
                 type="datetime-local"
                 value={deadline}
                 onChange={(event) => {
+                  window.sessionStorage.removeItem(
+                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                  );
                   setDeadline(event.target.value);
                 }}
                 required
@@ -222,6 +241,9 @@ export default function CreateTaskPage() {
                 min="1"
                 value={reward}
                 onChange={(event) => {
+                  window.sessionStorage.removeItem(
+                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                  );
                   setReward(event.target.value);
                 }}
                 required
@@ -257,6 +279,9 @@ export default function CreateTaskPage() {
                   value="private"
                   checked={visibility === "private"}
                   onChange={() => {
+                    window.sessionStorage.removeItem(
+                      TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                    );
                     setVisibility("private");
                   }}
                 />
@@ -285,6 +310,9 @@ export default function CreateTaskPage() {
                   value="public"
                   checked={visibility === "public"}
                   onChange={() => {
+                    window.sessionStorage.removeItem(
+                      TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                    );
                     setVisibility("public");
                   }}
                 />

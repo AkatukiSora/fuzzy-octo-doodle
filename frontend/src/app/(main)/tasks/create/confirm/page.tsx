@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../../components/layout/PageHeader";
 import {
   isTaskDraft,
+  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
   TASK_DRAFT_STORAGE_KEY,
   type TaskDraft,
 } from "../task-draft";
@@ -27,8 +29,12 @@ function formatDeadline(value: string) {
 }
 
 export default function ConfirmTaskPage() {
+  const router = useRouter();
   const [draft, setDraft] = useState<TaskDraft | null>(null);
   const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [skipApi, setSkipApi] = useState(false);
 
   useEffect(() => {
     const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
@@ -52,6 +58,95 @@ export default function ConfirmTaskPage() {
 
     setDraft(parsedDraft);
   }, []);
+
+  const handleConfirm = async () => {
+    if (!draft || isSubmitting) {
+      return;
+    }
+
+    setSubmitError("");
+    if (skipApi) {
+      window.sessionStorage.removeItem(TASK_DRAFT_STORAGE_KEY);
+      window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
+      router.push("/tasks");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      let idempotencyKey = window.sessionStorage.getItem(
+        TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+      );
+      if (
+        idempotencyKey === null ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          idempotencyKey,
+        )
+      ) {
+        idempotencyKey = window.crypto.randomUUID();
+        window.sessionStorage.setItem(
+          TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+          idempotencyKey,
+        );
+      }
+
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify({
+          title: draft.title,
+          achievementCondition: "写真で判定",
+          evidenceMethod: "写真を1枚以上提出",
+          deadlineAt: new Date(draft.deadline).toISOString(),
+          penaltyAmount: Number(draft.reward),
+          isPenaltyPublic: draft.visibility === "public",
+          originalTaskId: null,
+        }),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        let message = `タスクを作成できませんでした（HTTP ${String(response.status)}）。`;
+        if (responseText) {
+          try {
+            const body: unknown = JSON.parse(responseText);
+            if (
+              typeof body === "object" &&
+              body !== null &&
+              "error" in body &&
+              typeof body.error === "object" &&
+              body.error !== null &&
+              "message" in body.error &&
+              typeof body.error.message === "string"
+            ) {
+              message = body.error.message;
+            }
+          } catch {
+            // Fall back to the HTTP status when the server response is not JSON.
+          }
+        }
+        setSubmitError(message);
+        return;
+      }
+
+      window.sessionStorage.removeItem(TASK_DRAFT_STORAGE_KEY);
+      window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
+      router.push("/tasks");
+    } catch (requestError) {
+      setSubmitError(
+        requestError instanceof Error
+          ? `タスクの作成に失敗しました: ${requestError.message}`
+          : "タスクの作成に失敗しました。通信状況を確認して再度お試しください。",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AppLayout showHeader={false}>
@@ -95,14 +190,48 @@ export default function ConfirmTaskPage() {
               </div>
             </dl>
 
+            <label className={styles["skipApiOption"]}>
+              <input
+                type="checkbox"
+                checked={skipApi}
+                onChange={(event) => setSkipApi(event.target.checked)}
+              />
+              <span>
+                <span className={styles["skipApiLabel"]}>
+                  APIにデータを渡さず、動作だけを確認する
+                </span>
+                <span className={styles["skipApiDescription"]}>
+                  チェック時はタスクを保存せず、確定後に一覧画面へ移動します。
+                </span>
+              </span>
+            </label>
+
             <div className={styles["actions"]}>
-              <button type="button" className={styles["confirmButton"]}>
-                確定
+              <button
+                type="button"
+                className={styles["confirmButton"]}
+                onClick={handleConfirm}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "送信中..." : "確定"}
               </button>
-              <Link href="/tasks/create" className={styles["editButton"]}>
+              <Link
+                href="/tasks/create"
+                className={styles["editButton"]}
+                onClick={() => {
+                  window.sessionStorage.removeItem(
+                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
+                  );
+                }}
+              >
                 変更
               </Link>
             </div>
+            {submitError && (
+              <p className={styles["error"]} role="alert">
+                {submitError}
+              </p>
+            )}
           </div>
         ) : null}
       </div>
