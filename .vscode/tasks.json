@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run frontend demo",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"--dir",
+				"frontend",
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

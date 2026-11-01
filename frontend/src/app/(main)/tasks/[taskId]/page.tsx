@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
+import { AdditionalEvidenceNotice } from "../../../../components/tasks/AdditionalEvidenceNotice";
 import { TaskStatusBadge } from "../../../../components/tasks/TaskStatusBadge";
 import { ErrorState } from "../../../../components/ui/ErrorState";
 import { Loading } from "../../../../components/ui/Loading";
@@ -161,6 +162,8 @@ export default function TaskDetailPage({
 
   const progressIndex = task ? getProgressIndex(task.status) : 0;
   const isActive = task?.status === "active";
+  const canSubmitEvidence =
+    task?.status === "active" || task?.status === "disputed";
 
   return (
     <AppLayout showHeader={false}>
@@ -216,6 +219,8 @@ export default function TaskDetailPage({
               </div>
             </section>
 
+            {task.status === "disputed" && <AdditionalEvidenceNotice />}
+
             <section className={styles["conditionCard"]}>
               <div className={styles["sectionIcon"]} aria-hidden="true">◎</div>
               <div>
@@ -255,7 +260,7 @@ export default function TaskDetailPage({
                     : "証拠の提出状況を確認中です"}
                 </span>
               </div>
-              {isActive && task.viewer === "owner" && (
+              {canSubmitEvidence && task.viewer === "owner" && (
                 <button
                   className={styles["submitButton"]}
                   type="button"
@@ -264,7 +269,9 @@ export default function TaskDetailPage({
                   }}
                 >
                   <span aria-hidden="true">▧</span>
-                  証拠を提出する
+                  {task.status === "disputed"
+                    ? "追加の証拠を提出"
+                    : "証拠を提出する"}
                 </button>
               )}
             </section>
