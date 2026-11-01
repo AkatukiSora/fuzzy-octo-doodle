@@ -165,7 +165,7 @@ export default function EvidenceSubmittedPage({
             )}）。`,
           );
         }
-        const [task, evidences] = await Promise.all([
+        const [task, evidences]: [unknown, unknown] = await Promise.all([
           taskResponse.json(),
           evidenceResponse.json(),
         ]);
