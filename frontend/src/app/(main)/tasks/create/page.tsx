@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
+import {
+  isTaskDraft,
+  TASK_DRAFT_STORAGE_KEY,
+  type TaskDraft,
+  type TaskVisibility,
+} from "./task-draft";
 import styles from "./page.module.css";
-
-type Visibility = "private" | "public";
 
 function CalendarIcon() {
   return (
@@ -57,18 +62,64 @@ function RequiredBadge() {
 }
 
 export default function CreateTaskPage() {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [deadline, setDeadline] = useState("2025-04-20T23:59");
   const [reward, setReward] = useState("500");
-  const [visibility, setVisibility] = useState<Visibility>("private");
+  const [visibility, setVisibility] = useState<TaskVisibility>("private");
+  const [draftError, setDraftError] = useState("");
+
+  useEffect(() => {
+    const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
+    if (!storedDraft) {
+      return;
+    }
+
+    let parsedDraft: unknown;
+    try {
+      parsedDraft = JSON.parse(storedDraft);
+    } catch {
+      setDraftError("保存された入力内容を読み込めませんでした。入力し直してください。");
+      return;
+    }
+
+    if (!isTaskDraft(parsedDraft)) {
+      setDraftError("保存された入力内容を読み込めませんでした。入力し直してください。");
+      return;
+    }
+
+    setTitle(parsedDraft.title);
+    setDescription(parsedDraft.description);
+    setDeadline(parsedDraft.deadline);
+    setReward(parsedDraft.reward);
+    setVisibility(parsedDraft.visibility);
+  }, []);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const draft: TaskDraft = {
+      title,
+      description,
+      deadline,
+      reward,
+      visibility,
+    };
+    window.sessionStorage.setItem(
+      TASK_DRAFT_STORAGE_KEY,
+      JSON.stringify(draft),
+    );
+    router.push("/tasks/create/confirm");
+  };
 
   return (
     <AppLayout showHeader={false}>
       <div className={styles["screen"]}>
         <PageHeader title="タスク作成" backHref="/tasks" />
 
-        <div className={styles["formCard"]}>
+        <form className={styles["formCard"]} onSubmit={handleSubmit}>
+          {draftError && <p className={styles["hint"]}>{draftError}</p>}
           <div className={styles["field"]}>
             <label className={styles["labelRow"]} htmlFor="task-title">
               <span className={styles["label"]}>タスク名</span>
@@ -251,10 +302,10 @@ export default function CreateTaskPage() {
             </div>
           </fieldset>
 
-          <button type="button" className={styles["submitButton"]}>
+          <button type="submit" className={styles["submitButton"]}>
             確認画面へ
           </button>
-        </div>
+        </form>
       </div>
     </AppLayout>
   );
