@@ -7,6 +7,7 @@ import { AppLayout } from "../../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../../components/layout/PageHeader";
 import {
   isTaskDraft,
+  TASK_COMPLETION_STORAGE_KEY,
   TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
   TASK_DRAFT_STORAGE_KEY,
   type TaskDraft,
@@ -35,6 +36,16 @@ export default function ConfirmTaskPage() {
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skipApi, setSkipApi] = useState(false);
+
+  const finishTaskCreation = (taskId?: string) => {
+    window.sessionStorage.setItem(
+      TASK_COMPLETION_STORAGE_KEY,
+      JSON.stringify({ draft, ...(taskId ? { taskId } : {}) }),
+    );
+    window.sessionStorage.removeItem(TASK_DRAFT_STORAGE_KEY);
+    window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
+    router.push("/tasks/create/complete");
+  };
 
   useEffect(() => {
     const storedDraft = window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY);
@@ -66,9 +77,7 @@ export default function ConfirmTaskPage() {
 
     setSubmitError("");
     if (skipApi) {
-      window.sessionStorage.removeItem(TASK_DRAFT_STORAGE_KEY);
-      window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
-      router.push("/tasks");
+      finishTaskCreation();
       return;
     }
 
@@ -134,9 +143,18 @@ export default function ConfirmTaskPage() {
         return;
       }
 
-      window.sessionStorage.removeItem(TASK_DRAFT_STORAGE_KEY);
-      window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
-      router.push("/tasks");
+      const createdTask: unknown = await response.json();
+      if (
+        typeof createdTask !== "object" ||
+        createdTask === null ||
+        !("id" in createdTask) ||
+        typeof createdTask.id !== "string" ||
+        createdTask.id.length === 0
+      ) {
+        throw new Error("作成したタスクの情報を読み込めませんでした。");
+      }
+
+      finishTaskCreation(createdTask.id);
     } catch (requestError) {
       setSubmitError(
         requestError instanceof Error

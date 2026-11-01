@@ -10,6 +10,7 @@ export interface TaskDraft {
 
 export const TASK_DRAFT_STORAGE_KEY = "task-create-draft";
 export const TASK_IDEMPOTENCY_KEY_STORAGE_KEY = "task-create-idempotency-key";
+export const TASK_COMPLETION_STORAGE_KEY = "task-create-completion";
 
 export function isTaskDraft(value: unknown): value is TaskDraft {
   if (typeof value !== "object" || value === null) {
