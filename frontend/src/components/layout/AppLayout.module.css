@@ -88,14 +88,25 @@
   padding: 10px 19px 128px 22px;
 }
 
+@media (max-width: 767px) {
+  .headerInner {
+    min-height: 72px;
+    padding: 0 20px;
+  }
+
+  .title {
+    font-size: 25px;
+  }
+
+  .main {
+    padding: 20px 16px 120px;
+  }
+}
+
 /* ヘッダー非表示の詳細画面 */
 .mainFullWidth {
   max-width: none;
-  padding: 0;
-}
-
-.mainFullWidth {
-  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  padding: 0 0 calc(100px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 600px) {

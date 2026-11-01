@@ -9,7 +9,7 @@ import { GetFeedUseCase } from "../../../application/usecases/feed/get-feed.usec
 import { GetPostUseCase } from "../../../application/usecases/feed/get-post.usecase.ts";
 import { RemoveReactionUseCase } from "../../../application/usecases/feed/remove-reaction.usecase.ts";
 import { SetReactionUseCase } from "../../../application/usecases/feed/set-reaction.usecase.ts";
-import { todo } from "../../../application/shared/todo.ts"
+import { REACTION_TYPES } from "../../../domain/feed/post.ts";
 import { parsePostId } from "../../../domain/shared/id-parsers.ts";
 /**
  * 責務: タイムラインと投稿リアクションの HTTP 入出力を受け持つ。入力検証と UseCase 呼び出しまでを行い、閲覧権限や保存処理は担わない。
@@ -29,6 +29,10 @@ const feedQuerySchema = z.object({
   filter: z.enum(["all", "objected"]).default("all"),
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(FEED_PAGE_SIZE),
+});
+
+const reactionBodySchema = z.object({
+  type: z.enum(REACTION_TYPES),
 });
 
 @Controller("")
@@ -86,8 +90,9 @@ export class FeedController {
    */
   @Put("posts/:id/reaction")
   @HttpCode(204)
-  react(@CurrentUser() _user: UserId, @Param("id") _id: string, @Body() _body: unknown): Promise<null> {
-    return todo("FeedController.react");
+    react(@CurrentUser() user: UserId, @Param("id") id: string, @Body() body: unknown): Promise<null> {
+    const { type } = reactionBodySchema.parse(body);
+    return this.setReaction.execute({ userId: user, postId: parsePostId(id), type });
   }
 
   /**
@@ -101,7 +106,7 @@ export class FeedController {
    */
   @Delete("posts/:id/reaction")
   @HttpCode(204)
-  unreact(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<null> {
-    return todo("FeedController.unreact");
+    unreact(@CurrentUser() user: UserId, @Param("id") id: string): Promise<null> {
+    return this.removeReaction.execute({ userId: user, postId: parsePostId(id) });
   }
 }

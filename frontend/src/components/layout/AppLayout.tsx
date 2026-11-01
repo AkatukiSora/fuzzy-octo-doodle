@@ -1,7 +1,6 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Sidebar } from "./Sidebar";
 import { BottomNavigation } from "./BottomNavigation";
 import styles from "./AppLayout.module.css";
 
@@ -22,8 +21,6 @@ export function AppLayout({
 }: AppLayoutProps) {
   return (
     <div className={styles["layout"]}>
-      <Sidebar />
-
       <div className={styles["contentArea"]}>
         {showHeader && (
           <header className={styles["header"]}>

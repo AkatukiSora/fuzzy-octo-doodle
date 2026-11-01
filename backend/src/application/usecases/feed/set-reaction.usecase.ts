@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -57,7 +57,12 @@ export class SetReactionUseCase {
    * 閲覧可能な投稿への利用者のリアクションを1種類に設定する。投稿の可視性判定は PostRepository に委ね、投稿自体は変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: SetReactionInput): Promise<null> {
-    return todo("SetReactionUseCase");
+    execute(input: SetReactionInput): Promise<null> {
+    return this.uow.run(async (tx) => {
+      const item = await this.posts.findFeedItem(tx, input.postId, input.userId);
+      if (item === null) throw new DomainError("NOT_FOUND", "投稿が見つかりません");
+      await this.reactions.upsert(tx, input.postId, input.userId, input.type, this.clock.now());
+      return null;
+    });
   }
 }
