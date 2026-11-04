@@ -27,8 +27,6 @@ export function AppLayout({
               </h1>
 
               {headerActions}
-                </Link>
-              )}
             </div>
           </header>
         )}
