@@ -1,0 +1,94 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: #f9f8ff;
+}
+
+.title,
+.hint {
+  margin: 0;
+}
+
+.title {
+  color: #101a33;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.hint {
+  color: #333;
+  font-size: 11px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e8e5f1;
+  border-radius: 9px;
+  background: #fff;
+  color: #333;
+  text-align: left;
+  cursor: pointer;
+}
+
+.selected {
+  border-color: #ff9caf;
+  background: #fff0f3;
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border: 2px solid #a9aec2;
+  border-radius: 50%;
+}
+
+.radioSelected {
+  border-color: #ed2457;
+}
+
+.radioSelected::after {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ed2457;
+  content: "";
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionTitle {
+  color: #333;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.selected .optionTitle {
+  color: #ed2457;
+}
+
+.description {
+  color: #333;
+  font-size: 10px;
+}

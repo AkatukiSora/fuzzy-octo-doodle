@@ -10,7 +10,9 @@ import { CompleteEvidenceUploadUseCase } from "../../../application/usecases/evi
 import { IssueUploadUrlsUseCase } from "../../../application/usecases/evidence/issue-upload-urls.usecase.ts";
 import { ListEvidencesUseCase } from "../../../application/usecases/evidence/list-evidences.usecase.ts";
 import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases/evidence/start-evidence-upload-session.usecase.ts";
-
+import { z } from "zod";
+import { parseTaskId, parseUploadSessionId } from "../../../domain/shared/id-parsers.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 /**
  * 責務: /api/tasks/:id 配下で証拠アップロードセッションの開始・URL 発行・完了と証拠一覧取得を受け付け、入力を検証して対応するユースケースへ渡す。写真データの転送と業務判定は担わない。
  *
@@ -27,6 +29,9 @@ import { StartEvidenceUploadSessionUseCase } from "../../../application/usecases
  *   3. ユースケースの execute を呼び、戻り値をそのまま返す。
  * 業務のルール（権限、状態の遷移、排他）は、ここに書かない。ユースケースと domain の責務である。
  */
+
+const completeBodySchema = z.object({ photoPaths: z.array(z.string()) });
+
 @Controller("tasks/:id")
 export class EvidenceController {
   constructor(
@@ -77,9 +82,11 @@ export class EvidenceController {
    */
   @Post("evidence-upload-sessions/:sessionId/complete")
   @HttpCode(200)
-  complete(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Param("id") _id: string, @Param("sessionId") _sessionId: string, @Body() _body: unknown): Promise<OwnerTaskView> {
-    return todo("EvidenceController.complete");
-  }
+  complete(@CurrentUser() user: UserId, @Headers("idempotency-key") key: string | undefined, @Param("id") id: string, @Param("sessionId") sessionId: string, @Body() body: unknown): Promise<OwnerTaskView> {
+    return this.completeEvidenceUpload.execute({
+       userId:user, idempotencyKey:parseIdempotencyKey(z.string().parse(key)), taskId:parseTaskId(id), sessionId:parseUploadSessionId(sessionId), photoPaths: completeBodySchema.parse(body).photoPaths,
+ });
+}
 
   /**
    * 閲覧権限を確認して証拠と写真の短期閲覧 URL を返す。

@@ -264,10 +264,10 @@ export default function TasksPage() {
         ...(historyPage?.items ?? []),
       ];
       setTasks((current) => [...current, ...nextTasks]);
-      setCursors((current) => ({
-        active: activePage?.nextCursor ?? current.active,
-        history: historyPage?.nextCursor ?? current.history,
-      }));
+      setCursors({
+        active: activePage?.nextCursor ?? null,
+        history: historyPage?.nextCursor ?? null,
+      });
     } catch (loadError) {
       setMoreError(
         loadError instanceof Error

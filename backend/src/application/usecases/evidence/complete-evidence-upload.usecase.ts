@@ -1,6 +1,5 @@
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -19,7 +18,16 @@ import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.t
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import type { CompleteEvidenceUploadInput } from "../../ports/usecases/complete-evidence-upload.port.ts";
-
+import { ID_GENERATOR } from "../../../application/ports/id-generator.port.ts";
+import type { IdGenerator } from "../../../application/ports/id-generator.port.ts";
+import { hashRequest } from "../../../application/shared/request-hash.ts";
+import { DomainError} from "../../../domain/index.ts";
+import { expectUploading, completeUpload, parsePhotoPaths } from "../../../domain/evidence/upload-session.ts";
+import type { Evidence } from "../../../domain/evidence/evidence.ts";
+import { parseEvidenceId } from "../../../domain/shared/id-parsers.ts";
+import { submitAdditionalEvidence, submitInitialEvidence } from "../../../domain/task/task.ts";
+import type { ReviewingTask, SuccessTask, TaskTransition } from "../../../domain/task/task.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
 /**
  * 責務: アップロード済み写真を検証して証拠を確定し、タスク状態・イベント・冪等レスポンスを同じトランザクションで更新する。写真のアップロード自体は担当しない。
  *
@@ -80,6 +88,9 @@ export class CompleteEvidenceUploadUseCase {
   protected readonly storage: ObjectStorage;
   /** タスク遷移イベントから投稿を保存する（通知は今は作らない）。 */
   protected readonly events: TaskEventPublisher;
+  /** 新しい証拠の ID を採番する。 */
+  protected readonly ids: IdGenerator;
+
 
   constructor(
     @Inject(UNIT_OF_WORK) uow: UnitOfWork,
@@ -91,6 +102,7 @@ export class CompleteEvidenceUploadUseCase {
     @Inject(FRIENDSHIP_REPOSITORY) friendships: FriendshipRepository,
     @Inject(OBJECT_STORAGE) storage: ObjectStorage,
     @Inject(TaskEventPublisher) events: TaskEventPublisher,
+    @Inject(ID_GENERATOR) ids: IdGenerator,
   ) {
     this.uow = uow;
     this.clock = clock;
@@ -101,13 +113,70 @@ export class CompleteEvidenceUploadUseCase {
     this.friendships = friendships;
     this.storage = storage;
     this.events = events;
+    this.ids = ids;
   }
 
   /**
    * アップロード済み写真を検証して証拠を確定し、タスク状態・イベント・冪等レスポンスを同じトランザクションで更新する。写真のアップロード自体は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CompleteEvidenceUploadInput): Promise<OwnerTaskView> {
-    return todo("CompleteEvidenceUploadUseCase");
+  execute(input: CompleteEvidenceUploadInput): Promise<OwnerTaskView> {
+    const now = this.clock.now();
+    const requestHash = hashRequest("complete_evidence_upload",
+      {
+        taskId: input.taskId,
+        sessionId: input.sessionId,
+        photoPaths: input.photoPaths,
+      })
+    return this.uow.run(async (tx) => {
+      const record = await this.idempotency.reserve(tx, input.userId, "complete_evidence_upload", input.idempotencyKey, requestHash, now);
+      if (null !== record) {
+        if (record.requestHash !== requestHash) {
+          throw new DomainError("IDEMPOTENCY_KEY_REUSED", "同じキーが別の内容で使われています")
+        }
+        if (record.responseBody !== null) return record.responseBody;
+
+      }
+        const task = await this.tasks.findByIdForUpdate(tx, input.taskId);
+        const session = await this.uploadSessions.findByIdForUpdate(tx, input.sessionId);
+        if (task === null || session === null) {
+          throw new DomainError("NOT_FOUND", "タスクまたはアップロードセッションが見つかりません")
+        }
+        const uploading = expectUploading(session);
+        const completed = completeUpload(uploading, input.userId, now);
+        await this.uploadSessions.save(tx, completed);
+        const photos = parsePhotoPaths(uploading, input.photoPaths);
+        for (const path of photos) {
+          if (!(await this.storage.exists(path))) {
+            throw new DomainError("VALIDATION_ERROR", "アップロードされていない写真があります");
+          }
+        }
+          const evidence: Evidence = {
+            id: parseEvidenceId(this.ids.uuid()),
+            taskId: task.id,
+            submissionType: session.submissionType,
+            comment: null,
+            submittedAt: now,
+            photos,
+          };
+          await this.evidences.insert(tx, evidence);
+          let transition: TaskTransition<ReviewingTask<1> | SuccessTask> | TaskTransition<ReviewingTask<2>>;
+          if (session.submissionType === "initial") {
+            if (task.status !== "active") throw new DomainError("STATE_CONFLICT", "初回の証拠を提出できる状態ではありません");
+            const friendCount = await this.friendships.countFriends(tx, task.ownerId);
+            transition = submitInitialEvidence(task, friendCount, now);
+          } else {
+            if (task.status !== "disputed") throw new DomainError("STATE_CONFLICT", "追加の証拠を提出できる状態ではありません");
+            transition = submitAdditionalEvidence(task, now);
+          }
+        await this.tasks.save(tx, transition.next)
+        await this.events.publish(tx,transition.events );
+        const view = toTaskView(transition.next, "owner");
+        
+        await this.idempotency.complete(tx, input.userId, "complete_evidence_upload", input.idempotencyKey, 200, view);
+    return view;
+    })
   }
 }
+
+

@@ -1,6 +1,6 @@
 import type { JobResult } from "../../ports/usecases/job-result.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { expireInitial } from "../../../domain/task/task.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -74,7 +74,54 @@ export class ExpireInitialTasksUseCase {
    * 期限を過ぎた初回証拠待ちタスクを failed に確定し、失敗イベントと請求依頼につなぐ。ジョブの起動方法や認証は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ExpireInitialTasksInput): Promise<JobResult> {
-    return todo("ExpireInitialTasksUseCase");
+  async execute(input: ExpireInitialTasksInput): Promise<JobResult> {
+    const now = this.clock.now();
+    const candidates = await this.uow.run((tx) =>
+      this.tasks.lockExpiredInitial(tx, now, input.batchSize));
+    let processed = 0;
+    for (const candidate of candidates) {
+      try {
+        const failed = await this.uow.run(async (tx) => {
+          const task = await this.tasks.findByIdForUpdate(tx, candidate.id);
+          if (task?.status !== "active") {
+            return null;
+          }
+          const hasLiveSession = await this.uploadSessions.hasLiveSession(
+            tx,
+            task.id,
+            "initial",
+            now,
+          );
+          const transition = expireInitial(task, now, hasLiveSession);
+          if (transition === null) {
+            return null;
+          }
+          await this.tasks.save(tx, transition.next);
+          await this.events.publish(tx, transition.events);
+          return transition.next;
+        });
+        if (failed === null) {
+          continue;
+        }
+        await this.payment.requestCharge({
+          taskId: failed.id,
+          userId: failed.ownerId,
+          amount: failed.penaltyAmount,
+        });
+        processed += 1;
+      } catch (error) {
+        console.error(
+        JSON.stringify({
+          msg: "expire-initial-tasks: task failed",
+          taskId: candidate.id,
+          error: String(error),
+          }),
+        );
+      }
+      
+    }
+    return { processed };
   }
 }
+
+

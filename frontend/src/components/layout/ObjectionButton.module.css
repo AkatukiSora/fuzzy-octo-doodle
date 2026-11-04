@@ -1,0 +1,51 @@
+.button {
+  min-height: 48px;
+  margin-bottom: 92px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 11px;
+  background: #ffe0e4;
+  color: #ed2457;
+  box-shadow: none;
+}
+
+@media (min-width: 768px) {
+  .button {
+    margin-bottom: 0;
+  }
+}
+
+.button:hover:not(:disabled) {
+  background: #ffd2d9;
+  opacity: 1;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 24px 1fr 24px;
+  align-items: center;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.warningIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.arrow {
+  justify-self: end;
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 18px;
+}

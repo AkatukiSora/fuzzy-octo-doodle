@@ -1,0 +1,15 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: calc(100vh - 64px);
+  padding: 8px 16px 112px;
+  box-sizing: border-box;
+}
+
+.action {
+  width: 100%;
+  max-width: 420px;
+  margin-top: auto;
+}

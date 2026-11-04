@@ -94,23 +94,26 @@ function getRemainingText(deadlineAt: string): string {
   return "あと" + String(Math.ceil(hours / 24)) + "日";
 }
 
-function getProgressIndex(status: TaskStatus): number {
+const standardSteps = ["タスク作成", "挑戦中", "証拠提出", "審査中", "完了"];
+
+function getProgress(status: TaskStatus) {
   switch (status) {
     case "active":
-      return 1;
+      return { steps: standardSteps, current: 1 };
     case "reviewing":
+      return { steps: standardSteps, current: 3 };
     case "disputed":
-      return 3;
-    case "success":
-      return 4;
+      return { steps: ["タスク作成", "挑戦中", "証拠提出", "審査中", "追加証拠待ち"], current: 4 };
     case "failed":
+      return { steps: ["タスク作成", "挑戦中", "期限切れ"], current: 2 };
+    case "success":
+      return { steps: ["タスク作成", "挑戦中", "証拠提出", "達成"], current: 3 };
     case "indeterminate":
+      return { steps: ["タスク作成", "証拠提出", "審査中", "判定不能"], current: 3 };
     case "closed":
-      return 4;
+      return { steps: ["タスク作成", "終了"], current: 1 };
   }
 }
-
-const progressSteps = ["タスク作成", "挑戦中", "証拠提出", "審査中", "完了"];
 
 export default function TaskDetailPage({
   params,
@@ -157,7 +160,7 @@ export default function TaskDetailPage({
     };
   }, [taskId, reloadKey]);
 
-  const progressIndex = task ? getProgressIndex(task.status) : 0;
+  const { steps: progressSteps, current: progressIndex } = getProgress(task?.status ?? "active");
   const isActive = task?.status === "active";
 
   return (
@@ -175,7 +178,7 @@ export default function TaskDetailPage({
             }}
           />
         ) : task ? (
-          <main className={styles["content"]}>
+          <div className={styles["content"]}>
             <section className={styles["taskCard"]}>
               <div className={styles["ownerRow"]}>
                 <div className={styles["avatar"]} aria-hidden="true">
@@ -250,7 +253,9 @@ export default function TaskDetailPage({
                 <span>
                   {isActive
                     ? "まだ証拠が提出されていません"
-                    : "証拠の提出状況を確認中です"}
+                    : task.status === "failed"
+                      ? "期限までに証拠が提出されませんでした"
+                      : "証拠の提出状況を確認中です"}
                 </span>
               </div>
               {isActive && task.viewer === "owner" && (
@@ -275,7 +280,7 @@ export default function TaskDetailPage({
               <h3>コメント</h3>
               <p>コメントはまだありません。</p>
             </section>
-          </main>
+          </div>
         ) : null}
       </div>
     </AppLayout>

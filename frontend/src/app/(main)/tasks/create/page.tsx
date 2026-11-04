@@ -115,11 +115,16 @@ export default function CreateTaskPage() {
       reward,
       visibility,
     };
-    window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
-    window.sessionStorage.setItem(
-      TASK_DRAFT_STORAGE_KEY,
-      JSON.stringify(draft),
-    );
+    const serialized = JSON.stringify(draft);
+    if (window.sessionStorage.getItem(TASK_DRAFT_STORAGE_KEY) !== serialized) {
+      const lead = new Date(deadline).getTime() - Date.now();
+      if (!Number.isFinite(lead) || lead < 10 * 60_000 || lead > 72 * 60 * 60_000) {
+        setDraftError("期限は現在から10分〜72時間の範囲で指定してください。");
+        return;
+      }
+      window.sessionStorage.removeItem(TASK_IDEMPOTENCY_KEY_STORAGE_KEY);
+      window.sessionStorage.setItem(TASK_DRAFT_STORAGE_KEY, serialized);
+    }
     router.push("/tasks/create/confirm");
   };
 
@@ -141,9 +146,6 @@ export default function CreateTaskPage() {
               type="text"
               value={title}
               onChange={(event) => {
-                window.sessionStorage.removeItem(
-                  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                );
                 setTitle(event.target.value);
               }}
               placeholder="タスク名を入力してください"
@@ -166,9 +168,6 @@ export default function CreateTaskPage() {
               ].join(" ")}
               value={description}
               onChange={(event) => {
-                window.sessionStorage.removeItem(
-                  TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                );
                 setDescription(event.target.value);
               }}
               placeholder="タスクの詳細を入力してください"
@@ -192,9 +191,6 @@ export default function CreateTaskPage() {
                 type="datetime-local"
                 value={deadline}
                 onChange={(event) => {
-                  window.sessionStorage.removeItem(
-                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                  );
                   setDeadline(event.target.value);
                 }}
                 required
@@ -238,12 +234,10 @@ export default function CreateTaskPage() {
                 id="task-reward"
                 className={styles["numberInput"]}
                 type="number"
-                min="1"
+                min="100"
+                max="10000"
                 value={reward}
                 onChange={(event) => {
-                  window.sessionStorage.removeItem(
-                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                  );
                   setReward(event.target.value);
                 }}
                 required
@@ -251,7 +245,7 @@ export default function CreateTaskPage() {
               <span className={styles["currency"]}>円</span>
             </div>
             <p className={styles["hint"]}>
-              ※ タスクを達成できなかった場合、この金額を支払います。
+              100〜10,000円。タスクを達成できなかった場合、この金額を支払います。
             </p>
           </div>
 
@@ -279,9 +273,6 @@ export default function CreateTaskPage() {
                   value="private"
                   checked={visibility === "private"}
                   onChange={() => {
-                    window.sessionStorage.removeItem(
-                      TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                    );
                     setVisibility("private");
                   }}
                 />
@@ -310,9 +301,6 @@ export default function CreateTaskPage() {
                   value="public"
                   checked={visibility === "public"}
                   onChange={() => {
-                    window.sessionStorage.removeItem(
-                      TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                    );
                     setVisibility("public");
                   }}
                 />

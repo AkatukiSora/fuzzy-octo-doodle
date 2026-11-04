@@ -1,0 +1,10 @@
+.status {
+  margin: 0 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #e8f8ef;
+  color: #20855a;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}

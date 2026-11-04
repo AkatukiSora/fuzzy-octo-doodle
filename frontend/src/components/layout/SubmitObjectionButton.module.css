@@ -1,0 +1,15 @@
+.button {
+  min-height: 44px;
+  margin: 0 4px;
+  border: 0;
+  border-radius: 10px;
+  background: #ffe0e4;
+  color: #ed2457;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.button:hover:not(:disabled) {
+  background: #ffd2d9;
+  opacity: 1;
+}

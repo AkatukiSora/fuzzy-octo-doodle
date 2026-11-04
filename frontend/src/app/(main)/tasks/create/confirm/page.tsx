@@ -100,7 +100,7 @@ export default function ConfirmTaskPage() {
         },
         body: JSON.stringify({
           title: draft.title,
-          achievementCondition: "写真で判定",
+          achievementCondition: draft.description.trim() || "写真で判定",
           evidenceMethod: "写真を1枚以上提出",
           deadlineAt: new Date(draft.deadline).toISOString(),
           penaltyAmount: Number(draft.reward),
@@ -222,11 +222,6 @@ export default function ConfirmTaskPage() {
               <Link
                 href="/tasks/create"
                 className={styles["editButton"]}
-                onClick={() => {
-                  window.sessionStorage.removeItem(
-                    TASK_IDEMPOTENCY_KEY_STORAGE_KEY,
-                  );
-                }}
               >
                 変更
               </Link>
