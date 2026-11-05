@@ -1,7 +1,5 @@
 
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { Sidebar } from "./Sidebar";
 import { BottomNavigation } from "./BottomNavigation";
 import styles from "./AppLayout.module.css";
 
