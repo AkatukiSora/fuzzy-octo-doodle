@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { acceptFriendship, expectFriendshipStatus } from "../../../domain/friendship/friendship.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -60,9 +61,30 @@ export class AcceptFriendRequestUseCase {
 
   /**
    * 受信者本人の保留中フレンド申請を承認して accepted 状態にする。申請の作成や HTTP 入力検証は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 関係の遷移と FriendRequestView の作成を 1 つの UnitOfWork.run 内で行う。
    */
-  execute(_input: AcceptFriendRequestInput): Promise<FriendRequestView> {
-    return todo("AcceptFriendRequestUseCase");
+  execute(input: AcceptFriendRequestInput): Promise<FriendRequestView> {
+    return this.uow.run(async (tx) => {
+      const friendship = await this.friendships.findById(tx, input.friendshipId, { forUpdate: true });
+      if (friendship === null) throw new DomainError("NOT_FOUND", "フレンド申請が見つかりません");
+
+      const pending = expectFriendshipStatus(friendship, "pending");
+      const accepted = acceptFriendship(pending, input.userId, this.clock.now());
+      await this.friendships.save(tx, accepted);
+
+      const users = await this.users.findByIds(tx, [accepted.requesterId, accepted.receiverId]);
+      const requester = users.find((user) => user.id === accepted.requesterId);
+      const addressee = users.find((user) => user.id === accepted.receiverId);
+      if (requester === undefined || addressee === undefined) {
+        throw new DomainError("NOT_FOUND", "申請者または受信者が見つかりません");
+      }
+
+      return {
+        id: accepted.id,
+        requester: { userId: requester.id, nickname: requester.nickname },
+        addressee: { userId: addressee.id, nickname: addressee.nickname },
+        requestedAt: accepted.requestedAt,
+      };
+    });
   }
 }

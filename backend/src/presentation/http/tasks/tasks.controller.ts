@@ -1,13 +1,14 @@
-import type { TaskView } from "../../../domain/task/task-view.ts";
+
+import type { TaskView, OwnerTaskView } from "../../../domain/task/task-view.ts";
 import type { RetryTemplate } from "../../../application/ports/usecases/get-retry-template.port.ts";
 import type { Page } from "../../../application/ports/task.repository.ts";
-import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { z } from "zod";
 import { TASK_STATUSES } from "../../../domain/task/task-status.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
 import { GetRetryTemplateUseCase } from "../../../application/usecases/tasks/get-retry-template.usecase.ts";
 import { GetTaskUseCase } from "../../../application/usecases/tasks/get-task.usecase.ts";
@@ -40,6 +41,16 @@ const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(DEFAULT_TASK_PAGE_SIZE),
 });
 
+const createTaskBodySchema = z.object({
+  title: z.string(),
+  achievementCondition: z.string(),
+  evidenceMethod: z.string(),
+  deadlineAt: z.iso.datetime(),
+  penaltyAmount: z.number(),
+  isPenaltyPublic: z.boolean(),
+  originalTaskId: z.uuid().nullable(),
+});
+
 @Controller("tasks")
 export class TasksController {
   constructor(
@@ -60,8 +71,31 @@ export class TasksController {
    */
   @Post("")
   @HttpCode(201)
-  create(@CurrentUser() _user: UserId, @Headers("idempotency-key") _key: string | undefined, @Body() _body: unknown): Promise<OwnerTaskView> {
-    return todo("TasksController.create");
+  create(
+    @CurrentUser() user: UserId,
+    @Headers("idempotency-key") key: string | undefined,
+    @Body() body: unknown,
+  ): Promise<OwnerTaskView> {
+    const idempotencyKey = parseIdempotencyKey(z.uuid().parse(key));
+    const data = createTaskBodySchema.parse(body);
+
+    const deadlineAt = new Date(data.deadlineAt);
+    const originalTaskId =
+      data.originalTaskId === null
+        ? null
+        : parseTaskId(data.originalTaskId);
+
+    return this.createTask.execute({
+      userId: user,
+      idempotencyKey,
+      title: data.title,
+      achievementCondition: data.achievementCondition,
+      evidenceMethod: data.evidenceMethod,
+      deadlineAt,
+      penaltyAmount: data.penaltyAmount,
+      isPenaltyPublic: data.isPenaltyPublic,
+      originalTaskId,
+    });
   }
 
   /**
@@ -74,7 +108,7 @@ export class TasksController {
    */
   @Get("")
   @HttpCode(200)
-    list(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
+  list(@CurrentUser() user: UserId, @Query() query: Record<string, string | undefined>): Promise<Page<OwnerTaskView>> {
     const { view, status, search, cursor, limit } = listQuerySchema.parse(query);
     return this.listMyTasks.execute({
       userId: user,
@@ -97,8 +131,13 @@ export class TasksController {
    */
   @Get(":id/retry-template")
   @HttpCode(200)
-  retryTemplate(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<RetryTemplate> {
-    return todo("TasksController.retryTemplate");
+  retryTemplate(@CurrentUser() user: UserId, @Param("id") id: string): Promise<RetryTemplate> {
+    const taskId = parseTaskId(z.uuid().parse(id));
+
+    return this.getRetryTemplate.execute({
+      userId: user,
+      taskId,
+    });
   }
 
   /**
@@ -112,7 +151,13 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
-    return todo("TasksController.get");
+  get(
+    @CurrentUser() user: UserId,
+    @Param("id") id: string,
+  ): Promise<TaskView> {
+    return this.getTask.execute({
+      viewerId: user,
+      taskId: parseTaskId(id),
+    });
   }
 }

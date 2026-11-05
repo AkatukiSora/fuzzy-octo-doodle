@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { OBJECTION_REPOSITORY } from "../../../application/ports/objection.repository.ts";
@@ -42,7 +41,27 @@ export class ListMyObjectionsUseCase {
    * ログイン利用者が申し立てた異議をページ単位で返す。タスクの写真や他人が申し立てた異議はこの一覧に含めない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListMyObjectionsInput): Promise<Page<ObjectionSummary>> {
-    return todo("ListMyObjectionsUseCase");
-  }
+  execute(input: ListMyObjectionsInput): Promise<Page<ObjectionSummary>> {
+  return this.uow.run(async (tx) => {
+    const page = await this.objections.listByObjector(
+      tx,
+      input.userId,
+      input.cursor,
+      input.limit,
+    );
+
+    return {
+      items: page.items.map((objection) => ({
+        id: objection.id,
+        taskId: objection.taskId,
+        round: objection.reviewRound,
+        reasonType: objection.reasonType,
+        reasonDetail: objection.reasonDetail,
+        withdrawn: objection.withdrawnAt !== null,
+        createdAt: objection.createdAt,
+      })),
+      nextCursor: page.nextCursor,
+    };
+  });
+}
 }

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
@@ -47,7 +46,50 @@ export class ListFriendRequestsUseCase {
    * ログイン利用者が受信した pending 申請、または自分が送信した pending 申請を指定方向で返す。承認・拒否・取消は行わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListFriendRequestsInput): Promise<readonly FriendRequestView[]> {
-    return todo("ListFriendRequestsUseCase");
-  }
+  async execute(
+  input: ListFriendRequestsInput,
+): Promise<readonly FriendRequestView[]> {
+  return this.uow.run(async (tx) => {
+    const requests =
+      input.direction === "incoming"
+        ? await this.friendships.listIncomingPending(tx, input.userId)
+        : await this.friendships.listOutgoingPending(tx, input.userId);
+
+    if (requests.length === 0) return [];
+
+    const userIds = [
+      ...new Set(
+        requests.flatMap((request) => [
+          request.requesterId,
+          request.receiverId,
+        ]),
+      ),
+    ];
+
+    const users = await this.users.findByIds(tx, userIds);
+    const usersById = new Map(users.map((user) => [user.id, user]));
+
+    return requests.map((request) => {
+      const requester = usersById.get(request.requesterId);
+      const receiver = usersById.get(request.receiverId);
+
+      if (requester === undefined || receiver === undefined) {
+        throw new Error("フレンド申請の当事者ユーザーが見つかりません");
+      }
+
+      return {
+        id: request.id,
+        requester: {
+          userId: requester.id,
+          nickname: requester.nickname,
+        },
+        addressee: {
+          userId: receiver.id,
+          nickname: receiver.nickname,
+        },
+        requestedAt: request.requestedAt,
+      };
+    });
+  });
+}
 }

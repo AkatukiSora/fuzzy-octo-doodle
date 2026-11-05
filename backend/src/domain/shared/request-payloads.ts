@@ -12,11 +12,14 @@ import type { ReasonType } from "../objection/objection.ts";
  * `Record<IdempotentOperation, …>` なので、冪等性の対象の操作を増やすと、ここにも足さない限り型エラーになる。
  */
 export interface RequestPayloads extends Record<IdempotentOperation, Readonly<Record<string, unknown>>> {
-  /** タスク作成。originalTaskId は再挑戦の元タスクで、新規なら null */
+  /** タスク作成。deadlineAt は ISO 8601 に正規化し、originalTaskId は再挑戦の元タスク（新規なら null） */
   create_task: Readonly<{
     title: string;
     achievementCondition: string;
     evidenceMethod: string;
+    deadlineAt: string;
+    penaltyAmount: number;
+    isPenaltyPublic: boolean;
     originalTaskId: TaskId | null;
   }>;
   /** 証拠の提出完了。photoPaths は並び順も内容の一部として扱う（クライアントが同じ再送なら同じ並びになる） */

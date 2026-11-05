@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { FRIEND_INVITE_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
@@ -48,9 +48,21 @@ export class GetFriendInviteUseCase {
 
   /**
    * 公開招待リンクから招待者のニックネームだけを返す。認証やフレンド申請の作成は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 有効な招待と招待者をトランザクション内で読み、公開用の UserSummary を返す。
    */
-  execute(_input: GetFriendInviteInput): Promise<UserSummary> {
-    return todo("GetFriendInviteUseCase");
+  execute(input: GetFriendInviteInput): Promise<UserSummary> {
+    return this.uow.run(async (tx) => {
+      const invite = await this.invites.findActiveByToken(tx, input.token);
+      if (invite === null) {
+        throw new DomainError("NOT_FOUND", "有効な招待が見つかりません");
+      }
+
+      const inviter = await this.users.findById(tx, invite.inviterId);
+      if (inviter === null) {
+        throw new DomainError("NOT_FOUND", "招待者が見つかりません");
+      }
+
+      return { userId: inviter.id, nickname: inviter.nickname };
+    });
   }
 }

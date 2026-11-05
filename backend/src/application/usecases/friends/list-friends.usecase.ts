@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
@@ -45,9 +44,13 @@ export class ListFriendsUseCase {
 
   /**
    * ログイン利用者の accepted なフレンドを UserSummary の配列で返す。申請中や blocked の関係は一覧に含めない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListFriendsInput): Promise<readonly UserSummary[]> {
-    return todo("ListFriendsUseCase");
+  async execute(input: ListFriendsInput): Promise<readonly UserSummary[]> {
+    return this.uow.run(async (tx) => {
+      const ids = await this.friendships.listFriendIds(tx, input.userId);
+      if (ids.length === 0) return [];
+      const users = await this.users.findByIds(tx, ids);
+      return users.map((user) => ({ userId: user.id, nickname: user.nickname }));
+    });
   }
 }

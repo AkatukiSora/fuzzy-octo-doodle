@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { blockUser } from "../../../domain/friendship/friendship.ts";
+import { parseFriendshipId } from "../../../domain/shared/id-parsers.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -57,9 +58,16 @@ export class BlockUserUseCase {
 
   /**
    * 指定した相手との関係を blocked 状態にする。既存関係の有無を応答で区別せず、ブロック対象の存在を列挙する機能も持たない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * ペアをロックし、domain のブロック遷移を保存して本文なしで返す。
    */
-  execute(_input: BlockUserInput): Promise<null> {
-    return todo("BlockUserUseCase");
+  execute(input: BlockUserInput): Promise<null> {
+    return this.uow.run(async (tx) => {
+      const existing = await this.friendships.findByPair(tx, input.userId, input.targetUserId, { forUpdate: true });
+      const now = this.clock.now();
+      const newId = parseFriendshipId(this.ids.uuid());
+      const blocked = blockUser(newId, input.userId, input.targetUserId, existing, now);
+      await this.friendships.save(tx, blocked);
+      return null;
+    });
   }
 }

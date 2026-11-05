@@ -1,0 +1,53 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 12px;
+  border-radius: 12px;
+  background: #f9f8ff;
+}
+
+.title {
+  margin: 0;
+  color: #101a33;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8e5f1;
+}
+
+.row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.row dt {
+  color: #9298b2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.row dd {
+  margin: 0;
+  color: #333;
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  white-space: pre-wrap;
+}

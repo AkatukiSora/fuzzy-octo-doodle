@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -51,7 +50,14 @@ export class ExpireStaleUploadSessionsUseCase {
    * 完了期限を過ぎたアップロードセッションを整理する。タスク状態や証拠データは変更しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(): Promise<JobResult> {
-    return todo("ExpireStaleUploadSessionsUseCase");
-  }
+execute(_input: { batchSize: number }): Promise<JobResult> {
+  return this.uow.run(async (tx) => {
+    const now = this.clock.now();
+    const processed = await this.uploadSessions.expireStale(tx, now);
+
+    return { processed };
+  });
+}
+
+
 }

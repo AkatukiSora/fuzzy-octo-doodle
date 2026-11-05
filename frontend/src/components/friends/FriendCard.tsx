@@ -1,12 +1,9 @@
 
 import Link from "next/link";
 import styles from "./FriendCard.module.css";
+import type { Friend } from "./friend.types";
 
-export interface Friend {
-  id: string;
-  name: string;
-  avatarUrl?: string;
-}
+export type { Friend } from "./friend.types";
 
 interface FriendCardProps {
   friend: Friend;

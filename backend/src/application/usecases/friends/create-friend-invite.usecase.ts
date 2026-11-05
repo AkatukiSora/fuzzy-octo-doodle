@@ -1,6 +1,5 @@
-import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
+import type { FriendInvite, FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -55,9 +54,25 @@ export class CreateFriendInviteUseCase {
 
   /**
    * ログイン利用者が招待リンクを取得できるようにし、有効な招待がなければ 1 件作成する。招待の承認やフレンド関係の作成は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * `UnitOfWork.run` 内で有効な招待を再利用し、なければ新規作成して返す。
    */
-  execute(_input: CreateFriendInviteInput): Promise<FriendInviteView> {
-    return todo("CreateFriendInviteUseCase");
+  execute(input: CreateFriendInviteInput): Promise<FriendInviteView> {
+    return this.uow.run(async (tx) => {
+      const existing = await this.invites.findActiveByInviter(tx, input.userId);
+      if (existing !== null) {
+        return { token: existing.token, createdAt: existing.createdAt };
+      }
+
+      const createdAt = this.clock.now();
+      const invite: FriendInvite = {
+        id: this.ids.uuid(),
+        inviterId: input.userId,
+        token: this.ids.inviteToken(),
+        isActive: true,
+        createdAt,
+      };
+      await this.invites.insert(tx, invite);
+      return { token: invite.token, createdAt: invite.createdAt };
+    });
   }
 }

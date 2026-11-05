@@ -1,6 +1,5 @@
 import type { UploadUrlsResult } from "../../ports/usecases/issue-upload-urls.port.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -12,6 +11,11 @@ import type { UploadSessionRepository } from "../../../application/ports/evidenc
 import { OBJECT_STORAGE } from "../../../application/ports/object-storage.port.ts";
 import type { ObjectStorage } from "../../../application/ports/object-storage.port.ts";
 import type { IssueUploadUrlsInput } from "../../ports/usecases/issue-upload-urls.port.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import {
+  expectUploading,
+  issuePhotoPath,
+} from "../../../domain/evidence/upload-session.ts";
 
 /**
  * 責務: 有効なアップロードセッションに対して、サーバー管理の写真パスと署名付き PUT URL を発行する。クライアント指定の任意パスは受け付けない。
@@ -74,7 +78,66 @@ export class IssueUploadUrlsUseCase {
    * 有効なアップロードセッションに対して、サーバー管理の写真パスと署名付き PUT URL を発行する。クライアント指定の任意パスは受け付けない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: IssueUploadUrlsInput): Promise<UploadUrlsResult> {
-    return todo("IssueUploadUrlsUseCase");
-  }
+async execute(input: IssueUploadUrlsInput): Promise<UploadUrlsResult> {
+  return this.uow.run(async (tx) => {
+    // 1. タスクとアップロードセッションをロック付きで取得
+    const task = await this.tasks.findByIdForUpdate(tx, input.taskId);
+    if (!task) {
+      throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+    }
+
+    const session = await this.uploadSessions.findByIdForUpdate(
+      tx,
+      input.sessionId,
+    );
+    if (!session) {
+      throw new DomainError("NOT_FOUND", "アップロードセッションが見つかりません");
+    }
+
+    // 2. 所有者と関連付けを確認
+    if (
+      task.ownerId !== input.userId ||
+      session.userId !== input.userId
+    ) {
+      throw new DomainError("FORBIDDEN", "このセッションは利用できません");
+    }
+
+    if (session.taskId !== task.id) {
+      throw new DomainError("NOT_FOUND", "タスクとセッションが一致しません");
+    }
+
+    // 3. 完了期限を確認
+    const now = this.clock.now();
+    if (now.getTime() > session.uploadExpiresAt.getTime()) {
+      throw new DomainError("DEADLINE_EXPIRED", "アップロード完了期限を過ぎています");
+    }
+
+    // 4. uploading 状態であることを確認
+    const uploading = expectUploading(session);
+
+    // 5. 写真ごとにサーバー管理のパスを生成
+    const uploads = await Promise.all(
+      input.photos.map(async ({ slot, extension }) => {
+        const path = issuePhotoPath(uploading, slot, extension);
+
+        // 署名URLはセッションの残り有効時間を超えないようにする
+        const remainingSeconds = Math.max(
+          1,
+          Math.ceil(
+            (session.uploadExpiresAt.getTime() - now.getTime()) / 1000,
+          ),
+        );
+
+        const uploadUrl = await this.storage.createSignedUploadUrl(
+          path,
+          remainingSeconds,
+        );
+
+        return { slot, path, uploadUrl };
+      }),
+    );
+
+    return { uploads };
+  });
+}
 }

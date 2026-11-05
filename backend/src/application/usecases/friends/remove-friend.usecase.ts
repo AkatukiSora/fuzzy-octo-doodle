@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -7,6 +6,8 @@ import type { Clock } from "../../../application/ports/clock.port.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import type { RemoveFriendInput } from "../../ports/usecases/remove-friend.port.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { expectFriendshipStatus, removeFriendship } from "../../../domain/friendship/friendship.ts";
 
 /**
  * 責務: 2 人の accepted なフレンド関係を removed 状態にする。ユーザーのブロックや申請の拒否は担当しない。
@@ -49,9 +50,22 @@ export class RemoveFriendUseCase {
 
   /**
    * 2 人の accepted なフレンド関係を removed 状態にする。ユーザーのブロックや申請の拒否は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: RemoveFriendInput): Promise<null> {
-    return todo("RemoveFriendUseCase");
+  async execute(input: RemoveFriendInput): Promise<null> {
+    return this.uow.run(async (tx) => {
+      const friendship = await this.friendships.findByPair(
+        tx,
+        input.userId,
+        input.friendUserId,
+        { forUpdate: true },
+      );
+      if (friendship === null) {
+        throw new DomainError("NOT_FOUND", "関係がありません");
+      }
+      const accepted = expectFriendshipStatus(friendship, "accepted");
+      const removed = removeFriendship(accepted, input.userId);
+      await this.friendships.save(tx, removed);
+      return null;
+    });
   }
 }

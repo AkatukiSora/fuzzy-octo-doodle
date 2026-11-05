@@ -14,8 +14,10 @@ import { rowToInvite } from "../mappers/misc.mapper.ts";
 import { dbOf } from "../tx.ts";
 
 export class KyselyFriendshipRepository implements FriendshipRepository {
-  async findById(tx: Tx, id: FriendshipId): Promise<Friendship | null> {
-    const row = await dbOf(tx).selectFrom("friendships").selectAll().where("id", "=", id).executeTakeFirst();
+  async findById(tx: Tx, id: FriendshipId, opts?: { forUpdate?: boolean }): Promise<Friendship | null> {
+    let qb = dbOf(tx).selectFrom("friendships").selectAll().where("id", "=", id);
+    if (opts?.forUpdate === true) qb = qb.forUpdate();
+    const row = await qb.executeTakeFirst();
     return row === undefined ? null : rowToFriendship(row);
   }
 

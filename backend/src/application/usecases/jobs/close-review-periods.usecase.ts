@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -9,7 +8,7 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
 import type { JobResult } from "../../ports/usecases/job-result.ts";
 import type { CloseReviewPeriodsInput } from "../../ports/usecases/close-review-periods.port.ts";
-
+import { closeReviewPeriod } from "../../../domain/task/task.ts";
 /**
  * 責務: 審査期限を過ぎた reviewing タスクを success に確定し、確定する。ジョブの起動方法や認証は担わない。
  *
@@ -59,7 +58,34 @@ export class CloseReviewPeriodsUseCase {
    * 審査期限を過ぎた reviewing タスクを success に確定し、確定する。ジョブの起動方法や認証は担わない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CloseReviewPeriodsInput): Promise<JobResult> {
-    return todo("CloseReviewPeriodsUseCase");
+  async execute(input: CloseReviewPeriodsInput): Promise<JobResult> {
+    const now = this.clock.now();
+    const candidates = await this.uow.run((tx) =>
+      this.tasks.lockReviewEnded(tx, now, input.batchSize),
+    );
+    let processed = 0;
+    for (const candidate of candidates) {
+      try {
+        const closed = await this.uow.run(async (tx) => {
+          const task = await this.tasks.findByIdForUpdate(tx, candidate.id);
+          if (task?.status !== "reviewing") return false;
+          const transition = closeReviewPeriod(task, now);
+          if (transition === null) return false;
+              await this.tasks.save(tx, transition.next);
+              await this.events.publish(tx, transition.events);
+          return true;
+        });
+        if (closed) processed += 1;
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            msg: "close-review-periods: task failed",
+            taskId: candidate.id,
+            error: String(error),
+          }),
+        );
+      }
+    }
+    return { processed };
   }
 }

@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
@@ -8,6 +7,7 @@ import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { ListBlockedUsersInput } from "../../ports/usecases/list-blocked-users.port.ts";
+import { friendOf } from "../../../domain/friendship/friendship.ts";
 
 /**
  * 責務: ログイン利用者自身がブロックした相手を一覧で返す。相手から自分へのブロックや申請状態の一覧は担当しない。
@@ -47,7 +47,21 @@ export class ListBlockedUsersUseCase {
    * ログイン利用者自身がブロックした相手を一覧で返す。相手から自分へのブロックや申請状態の一覧は担当しない。
    * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: ListBlockedUsersInput): Promise<readonly UserSummary[]> {
-    return todo("ListBlockedUsersUseCase");
+  execute(input: ListBlockedUsersInput): Promise<readonly UserSummary[]> {
+    return this.uow.run(async (tx) => {
+      const blocked = await this.friendships.listBlockedBy(tx, input.userId);
+
+      if (blocked.length === 0) {
+        return [];
+      }
+
+      const userIds = blocked.map((f) => friendOf(f, input.userId));
+      const users = await this.users.findByIds(tx, userIds);
+
+      return users.map((user) => ({
+        userId: user.id,
+        nickname: user.nickname,
+      }));
+    });
   }
 }

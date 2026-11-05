@@ -4,7 +4,7 @@ import type { FriendshipId, UserId } from "../../domain/shared/ids.ts";
 import type { Tx } from "./unit-of-work.port.ts";
 
 export interface FriendshipRepository {
-  findById(tx: Tx, id: FriendshipId): Promise<Friendship | null>;
+  findById(tx: Tx, id: FriendshipId, opts?: { forUpdate?: boolean }): Promise<Friendship | null>;
   /** 順序非依存のペア検索。同時申請の競合対策として forUpdate を指定できる */
   findByPair(tx: Tx, a: UserId, b: UserId, opts?: { forUpdate?: boolean }): Promise<Friendship | null>;
   /** 新規は insert、既存は update。ペア一意制約違反は DomainError('ALREADY_EXISTS') に変換する */

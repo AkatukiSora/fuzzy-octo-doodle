@@ -1,6 +1,15 @@
+import { hashRequest } from "../../shared/request-hash.ts";
+import {
+  authorizeTaskCreation,
+  parseTaskDeadline,
+} from "../../../domain/task/task-policy.ts";
+import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
+import { createTask } from "../../../domain/task/task.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { toTaskView } from "../../../domain/task/task-view.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
 import type { OwnerTaskView } from "../../../domain/task/task-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -31,7 +40,7 @@ import type { CreateTaskInput } from "../../ports/usecases/create-task.port.ts";
  *
  * 処理:
  *   1. Clock.now() で要求処理に使う現在時刻を得て、parseIdempotencyKey でヘッダ値を IdempotencyKey にする。
- *   2. requestHash = hashRequest("create_task", { title, achievementCondition, evidenceMethod, originalTaskId }) を作る（RequestHash を作ってよいのは hashRequest だけ）。UnitOfWork.run の中で IdempotencyRepository.reserve(tx, userId, "create_task", key, requestHash, now) を呼び、要求を予約する。
+ *   2. requestHash = hashRequest("create_task", { title, achievementCondition, evidenceMethod, deadlineAt: deadlineAt.toISOString(), penaltyAmount, isPenaltyPublic, originalTaskId }) を作る（RequestHash を作ってよいのは hashRequest だけ）。UnitOfWork.run の中で IdempotencyRepository.reserve(tx, userId, "create_task", key, requestHash, now) を呼び、要求を予約する。
  *   3. 既存記録のハッシュが異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返して作成を繰り返さない。新規要求だけ次へ進む。
  *   4. PaymentGateway.assertCanCreateTask(userId) で支払い条件を確認する。
  *   5. TaskRepository.lockUserForCreation(tx, userId) を呼び、同じ利用者の作成処理を直列化する。
@@ -90,9 +99,84 @@ export class CreateTaskUseCase {
 
   /**
    * 利用者のタスクを 1 件作成し、作成前の支払い条件・同時作成数・期限の確認と保存を調整する。HTTP 入力検証そのものは担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 上の「処理」の順に実行する。
    */
-  execute(_input: CreateTaskInput): Promise<OwnerTaskView> {
-    return todo("CreateTaskUseCase");
+  execute(input: CreateTaskInput): Promise<OwnerTaskView> {
+    const now = this.clock.now();
+    const key = parseIdempotencyKey(input.idempotencyKey);
+    const requestHash = hashRequest("create_task", {
+      title: input.title,
+      achievementCondition: input.achievementCondition,
+      evidenceMethod: input.evidenceMethod,
+      deadlineAt: input.deadlineAt.toISOString(),
+      penaltyAmount: input.penaltyAmount,
+      isPenaltyPublic: input.isPenaltyPublic,
+      originalTaskId: input.originalTaskId,
+    });
+
+    return this.uow.run(async (tx) => {
+      const existing = await this.idempotency.reserve(
+        tx,
+        input.userId,
+        "create_task",
+        key,
+        requestHash,
+        now,
+      );
+      if (existing !== null) {
+        if (existing.requestHash !== requestHash) {
+          throw new DomainError(
+            "IDEMPOTENCY_KEY_REUSED",
+            "同じIdempotency-Keyが異なるリクエスト内容に使用されています",
+          );
+        }
+
+        if (existing.responseStatus === 201 && existing.responseBody !== null) {
+          return existing.responseBody;
+        }
+
+        throw new DomainError(
+          "STATE_CONFLICT",
+          "このリクエストは処理中、または正常に完了していません",
+        );
+      }
+
+      await this.payment.assertCanCreateTask(input.userId);
+      await this.tasks.lockUserForCreation(tx, input.userId);
+      const activeCount = await this.tasks.countActiveInitial(
+        tx,
+        input.userId,
+      );
+      const permit = authorizeTaskCreation(activeCount);
+      const deadline = parseTaskDeadline(input.deadlineAt, now);
+      const taskId = parseTaskId(this.ids.uuid());
+      const { next, events } = createTask(
+        {
+          id: taskId,
+          ownerId: input.userId,
+          originalTaskId: input.originalTaskId,
+          title: input.title,
+          achievementCondition: input.achievementCondition,
+          evidenceMethod: input.evidenceMethod,
+          deadlineAt: deadline,
+          penaltyAmount: input.penaltyAmount,
+          isPenaltyPublic: input.isPenaltyPublic,
+          permit,
+        },
+        now,
+      );
+      await this.tasks.insert(tx, next);
+      await this.events.publish(tx, events);
+      const response = toTaskView(next, "owner");
+      await this.idempotency.complete(
+        tx,
+        input.userId,
+        "create_task",
+        key,
+        201,
+        response,
+      );
+      return response;
+    });
   }
 }

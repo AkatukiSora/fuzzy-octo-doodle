@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -15,6 +14,12 @@ import type { ObjectionRepository } from "../../../application/ports/objection.r
 import { FRIENDSHIP_REPOSITORY } from "../../../application/ports/friendship.repository.ts";
 import type { FriendshipRepository } from "../../../application/ports/friendship.repository.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
+import { hashRequest } from "../../../application/shared/request-hash.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { parseObjectionId } from "../../../domain/shared/id-parsers.ts";
+import { createObjection } from "../../../domain/objection/objection.ts";
+import { acceptFirstObjection, acceptSecondObjection } from "../../../domain/task/task.ts";
+import { authorizeObjection, viewerRole } from "../../../domain/task/visibility-policy.ts";
 import type { ObjectionSummary } from "../../../domain/objection/objection-view.ts";
 import type { CreateObjectionInput } from "../../ports/usecases/create-objection.port.ts";
 
@@ -28,7 +33,7 @@ import type { CreateObjectionInput } from "../../ports/usecases/create-objection
  *     → TaskRepository・ObjectionRepository に保存し、TaskEventPublisher.publish でイベントを保存 → ObjectionSummary を返す。
  *
  * 処理:
- *   1. UnitOfWork.run を開始し、clock.now と parseIdempotencyKey を使って要求時刻とキーを得る。
+ *   1. UnitOfWork.run 内で clock.now を取得し、コントローラで parseIdempotencyKey 済みの Input のキーを使う。
  *   2. hashRequest("create_objection", { taskId, reasonType, reasonDetail }) で RequestHash を作り（作ってよいのは hashRequest だけ）、IdempotencyRepository.reserve に userId、create_objection、キー、その RequestHash を渡す。
  *   3. 既存記録の hash が異なる場合は IDEMPOTENCY_KEY_REUSED を返し、完了済みなら保存済みレスポンスを返す。新規要求だけを続ける。
  *   4. TaskRepository.findByIdForUpdate で taskId の行をロックして取得する。見つからなければ NOT_FOUND とする。状態変更と異議の同時処理を直列化するため、通常の findById ではなくロック付き取得を使う。
@@ -92,9 +97,75 @@ export class CreateObjectionUseCase {
 
   /**
    * 審査中のタスクに対する異議を 1 件だけ登録し、成立した異議に応じてタスクを次の状態へ進める。HTTP 入力検証や DB のロック実装は所有しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: CreateObjectionInput): Promise<ObjectionSummary> {
-    return todo("CreateObjectionUseCase");
+  execute(input: CreateObjectionInput): Promise<ObjectionSummary> {
+    const requestHash = hashRequest("create_objection", {
+      taskId: input.taskId,
+      reasonType: input.reasonType,
+      reasonDetail: input.reasonDetail,
+    });
+
+    return this.uow.run(async (tx) => {
+      const now = this.clock.now();
+      const record = await this.idempotency.reserve(
+        tx,
+        input.userId,
+        "create_objection",
+        input.idempotencyKey,
+        requestHash,
+        now,
+      );
+      if (record !== null) {
+        if (record.requestHash !== requestHash) {
+          throw new DomainError("IDEMPOTENCY_KEY_REUSED", "同じキーが別の内容で使われています");
+        }
+        if (record.responseBody !== null) return record.responseBody;
+      }
+
+      const task = await this.tasks.findByIdForUpdate(tx, input.taskId);
+      if (task === null) throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+
+      const isFriend = await this.friendships.areFriends(tx, input.userId, task.ownerId);
+      const role = viewerRole(task.ownerId, input.userId, isFriend);
+      const authorization = authorizeObjection(task, role, input.userId);
+      if (authorization === null) {
+        if (role === "owner") throw new DomainError("FORBIDDEN", "異議を申し立てる権限がありません");
+        if (!isFriend && role === "none") throw new DomainError("NOT_FOUND", "タスクが見つかりません");
+        if (!isFriend) throw new DomainError("FORBIDDEN", "異議を申し立てる権限がありません");
+        throw new DomainError("STATE_CONFLICT", "現在の状態では異議を申し立てられません");
+      }
+
+      const objection = createObjection(
+        {
+          id: parseObjectionId(this.ids.uuid()),
+          task: authorization.task,
+          right: authorization.right,
+          reasonType: input.reasonType,
+          reasonDetail: input.reasonDetail,
+        },
+        now,
+      );
+      const inserted = await this.objections.tryInsert(tx, objection);
+      if (!inserted) throw new DomainError("STATE_CONFLICT", "この審査回の異議はすでに登録されています");
+
+      const transition =
+        authorization.task.reviewRound === 1
+          ? acceptFirstObjection(authorization.task, now)
+          : acceptSecondObjection(authorization.task, now);
+      await this.tasks.save(tx, transition.next);
+      await this.events.publish(tx, transition.events);
+
+      const response: ObjectionSummary = {
+        id: objection.id,
+        taskId: objection.taskId,
+        round: objection.reviewRound,
+        reasonType: objection.reasonType,
+        reasonDetail: objection.reasonDetail,
+        withdrawn: false,
+        createdAt: objection.createdAt,
+      };
+      await this.idempotency.complete(tx, input.userId, "create_objection", input.idempotencyKey, 201, response);
+      return response;
+    });
   }
 }

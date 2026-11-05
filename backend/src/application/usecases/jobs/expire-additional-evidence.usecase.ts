@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { expireAdditional } from "../../../domain/task/task.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -61,11 +61,41 @@ export class ExpireAdditionalEvidenceUseCase {
     this.events = events;
   }
 
-  /**
-   * 期限を過ぎた追加証拠待ちタスクを indeterminate に確定する。請求は行わず、ジョブの起動方法や認証も担わない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
-   */
-  execute(_input: ExpireAdditionalEvidenceInput): Promise<JobResult> {
-    return todo("ExpireAdditionalEvidenceUseCase");
+  /** 期限を過ぎた追加証拠待ちタスクを indeterminate に確定する。 */
+  async execute(input: ExpireAdditionalEvidenceInput): Promise<JobResult> {
+    const now = this.clock.now();
+    const candidates = await this.uow.run((tx) =>
+      this.tasks.lockExpiredAdditional(tx, now, input.batchSize),
+    );
+    let processed = 0;
+    for (const candidate of candidates) {
+      try {
+        const expired = await this.uow.run(async (tx) => {
+          const task = await this.tasks.findByIdForUpdate(tx, candidate.id);
+          if (task?.status !== "disputed") return false;
+          const hasLiveSession = await this.uploadSessions.hasLiveSession(
+            tx,
+            task.id,
+            "additional",
+            now,
+          );
+          const transition = expireAdditional(task, now, hasLiveSession);
+          if (transition === null) return false;
+          await this.tasks.save(tx, transition.next);
+          await this.events.publish(tx, transition.events);
+          return true;
+        });
+        if (expired) processed += 1;
+      } catch (error) {
+        console.error(
+          JSON.stringify({
+            msg: "expire-additional-evidence: task failed",
+            taskId: candidate.id,
+            error: String(error),
+          }),
+        );
+      }
+    }
+    return { processed };
   }
 }

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { unblockFriendship, expectFriendshipStatus } from "../../../domain/friendship/friendship.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -50,9 +51,19 @@ export class UnblockUserUseCase {
 
   /**
    * 呼び出し利用者本人が設定したブロックを解除し、関係を removed 状態にする。相手が設定したブロックは解除しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * ロックした関係を blocked 状態に絞り、本人のブロック解除を保存する。
    */
-  execute(_input: UnblockUserInput): Promise<null> {
-    return todo("UnblockUserUseCase");
+  execute(input: UnblockUserInput): Promise<null> {
+    return this.uow.run(async (tx) => {
+      const existing = await this.friendships.findByPair(tx, input.userId, input.targetUserId, { forUpdate: true });
+      if (existing === null) {
+        throw new DomainError("NOT_FOUND", "指定した利用者との関係が見つかりません");
+      }
+
+      const blocked = expectFriendshipStatus(existing, "blocked");
+      const removed = unblockFriendship(blocked, input.userId);
+      await this.friendships.save(tx, removed);
+      return null;
+    });
   }
 }

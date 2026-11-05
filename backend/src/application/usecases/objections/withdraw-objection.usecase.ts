@@ -1,6 +1,5 @@
 import type { ObjectionSummary } from "../../../domain/objection/objection-view.ts";
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -12,6 +11,11 @@ import type { TaskRepository } from "../../../application/ports/task.repository.
 import { OBJECTION_REPOSITORY } from "../../../application/ports/objection.repository.ts";
 import type { ObjectionRepository } from "../../../application/ports/objection.repository.ts";
 import { TaskEventPublisher } from "../../../application/shared/task-event-publisher.ts";
+import { hashRequest } from "../../../application/shared/request-hash.ts";
+import { parseIdempotencyKey } from "../../../domain/shared/idempotency.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { expectOpenFirst, withdrawObjection } from "../../../domain/objection/objection.ts";
+import { expectStatus, withdrawFirstObjection } from "../../../domain/task/task.ts";
 import type { WithdrawObjectionInput } from "../../ports/usecases/withdraw-objection.port.ts";
 
 /**
@@ -79,9 +83,52 @@ export class WithdrawObjectionUseCase {
 
   /**
    * 申立人本人による初回異議の取り下げを受け付け、対象タスクを達成へ遷移させる。再審査の異議や別人の異議は取り下げない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
    */
-  execute(_input: WithdrawObjectionInput): Promise<ObjectionSummary> {
-    return todo("WithdrawObjectionUseCase");
+  execute(input: WithdrawObjectionInput): Promise<ObjectionSummary> {
+    return this.uow.run(async (tx) => {
+      const now = this.clock.now();
+      const key = parseIdempotencyKey(input.idempotencyKey);
+      const requestHash = hashRequest("withdraw_objection", { objectionId: input.objectionId });
+      const record = await this.idempotency.reserve(
+        tx,
+        input.userId,
+        "withdraw_objection",
+        key,
+        requestHash,
+        now,
+      );
+      if (record !== null) {
+        if (record.requestHash !== requestHash) {
+          throw new DomainError("IDEMPOTENCY_KEY_REUSED", "同じキーが別の内容で使われています");
+        }
+        if (record.responseBody !== null) return record.responseBody;
+      }
+
+      const objection = await this.objections.findById(tx, input.objectionId);
+      if (objection === null) throw new DomainError("NOT_FOUND", "異議が見つかりません");
+      const task = await this.tasks.findByIdForUpdate(tx, objection.taskId);
+      if (task === null) throw new DomainError("NOT_FOUND", "対象のタスクが見つかりません");
+
+      const openFirst = expectOpenFirst(objection);
+      const disputed = expectStatus(task, "disputed", "タスクが追加証拠待ちではありません");
+      const withdrawn = withdrawObjection(openFirst, input.userId, now);
+      const transition = withdrawFirstObjection(disputed, openFirst, now);
+
+      await this.objections.save(tx, withdrawn);
+      await this.tasks.save(tx, transition.next);
+      await this.events.publish(tx, transition.events);
+
+      const response: ObjectionSummary = {
+        id: withdrawn.id,
+        taskId: withdrawn.taskId,
+        round: withdrawn.reviewRound,
+        reasonType: withdrawn.reasonType,
+        reasonDetail: withdrawn.reasonDetail,
+        withdrawn: true,
+        createdAt: withdrawn.createdAt,
+      };
+      await this.idempotency.complete(tx, input.userId, "withdraw_objection", key, 200, response);
+      return response;
+    });
   }
 }

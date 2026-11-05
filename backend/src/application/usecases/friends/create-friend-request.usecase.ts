@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { hashRequest } from "../../../application/shared/request-hash.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -16,7 +16,11 @@ import { USER_REPOSITORY } from "../../../application/ports/user.repository.ts";
 import type { UserRepository } from "../../../application/ports/user.repository.ts";
 import { NOTIFICATION_REPOSITORY } from "../../../application/ports/notification.repository.ts";
 import type { NotificationRepository } from "../../../application/ports/notification.repository.ts";
+import { requestFriendship } from "../../../domain/friendship/friendship.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
+import type { Notification } from "../../../domain/notification/notification.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { parseFriendshipId, parseNotificationId } from "../../../domain/shared/id-parsers.ts";
 import type { CreateFriendRequestInput } from "../../ports/usecases/create-friend-request.port.ts";
 
 /**
@@ -90,9 +94,67 @@ export class CreateFriendRequestUseCase {
 
   /**
    * 有効な招待 token を使ったフレンド申請を作成し、招待者に通知する。招待リンクの閲覧だけで申請を承認したり、フレンド関係を成立させたりしない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 申請、通知、冪等性レスポンスを UnitOfWork.run 内で原子的に保存する。
    */
-  execute(_input: CreateFriendRequestInput): Promise<FriendRequestView> {
-    return todo("CreateFriendRequestUseCase");
+  execute(input: CreateFriendRequestInput): Promise<FriendRequestView> {
+    return this.uow.run(async (tx) => {
+      const now = this.clock.now();
+      const requestHash = hashRequest("create_friend_request", { inviteToken: input.inviteToken });
+      const record = await this.idempotency.reserve(
+        tx,
+        input.userId,
+        "create_friend_request",
+        input.idempotencyKey,
+        requestHash,
+        now,
+      );
+      if (record !== null) {
+        if (record.requestHash !== requestHash) {
+          throw new DomainError("IDEMPOTENCY_KEY_REUSED", "同じキーが別の内容で使われています");
+        }
+        if (record.responseBody !== null) return record.responseBody;
+      }
+
+      const invite = await this.invites.findActiveByToken(tx, input.inviteToken);
+      if (invite === null) throw new DomainError("NOT_FOUND", "有効な招待が見つかりません");
+
+      const existing = await this.friendships.findByPair(tx, input.userId, invite.inviterId, { forUpdate: true });
+      const pending = requestFriendship(
+        parseFriendshipId(this.ids.uuid()),
+        input.userId,
+        invite.inviterId,
+        existing,
+        now,
+      );
+      await this.friendships.save(tx, pending);
+
+      const users = await this.users.findByIds(tx, [input.userId, invite.inviterId]);
+      const requestUser = users.find((user) => user.id === input.userId);
+      const inviter = users.find((user) => user.id === invite.inviterId);
+      if (requestUser === undefined || inviter === undefined) {
+        throw new DomainError("NOT_FOUND", "申請者または招待者が見つかりません");
+      }
+
+      const view: FriendRequestView = {
+        id: pending.id,
+        requester: { userId: requestUser.id, nickname: requestUser.nickname },
+        addressee: { userId: inviter.id, nickname: inviter.nickname },
+        requestedAt: pending.requestedAt,
+      };
+      const notification: Notification = {
+        id: parseNotificationId(this.ids.uuid()),
+        userId: inviter.id,
+        type: "friend_request",
+        title: "フレンド申請が届きました",
+        body: `${requestUser.nickname}さんからフレンド申請が届きました`,
+        relatedTaskId: null,
+        readAt: null,
+        createdAt: now,
+        deduplicationKey: `create_friend_request:${input.userId}:${input.idempotencyKey}`,
+      };
+      await this.notifications.insertIfAbsent(tx, notification);
+      await this.idempotency.complete(tx, input.userId, "create_friend_request", input.idempotencyKey, 201, view);
+      return view;
+    });
   }
 }

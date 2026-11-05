@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import { cancelFriendship, expectFriendshipStatus } from "../../../domain/friendship/friendship.ts";
 import { UNIT_OF_WORK } from "../../../application/ports/unit-of-work.port.ts";
 import type { UnitOfWork } from "../../../application/ports/unit-of-work.port.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
@@ -60,9 +61,30 @@ export class CancelFriendRequestUseCase {
 
   /**
    * 申請者本人の保留中フレンド申請を取り消す。受信者側の拒否や申請の削除は担当しない。
-   * 本体は未実装（todo）。上の「処理」の順に実装する。
+   * 関係の遷移と FriendRequestView の作成を 1 つの UnitOfWork.run 内で行う。
    */
-  execute(_input: CancelFriendRequestInput): Promise<FriendRequestView> {
-    return todo("CancelFriendRequestUseCase");
+  execute(input: CancelFriendRequestInput): Promise<FriendRequestView> {
+    return this.uow.run(async (tx) => {
+      const friendship = await this.friendships.findById(tx, input.friendshipId, { forUpdate: true });
+      if (friendship === null) throw new DomainError("NOT_FOUND", "フレンド申請が見つかりません");
+
+      const pending = expectFriendshipStatus(friendship, "pending");
+      const cancelled = cancelFriendship(pending, input.userId);
+      await this.friendships.save(tx, cancelled);
+
+      const users = await this.users.findByIds(tx, [cancelled.requesterId, cancelled.receiverId]);
+      const requester = users.find((user) => user.id === cancelled.requesterId);
+      const addressee = users.find((user) => user.id === cancelled.receiverId);
+      if (requester === undefined || addressee === undefined) {
+        throw new DomainError("NOT_FOUND", "申請者または受信者が見つかりません");
+      }
+
+      return {
+        id: cancelled.id,
+        requester: { userId: requester.id, nickname: requester.nickname },
+        addressee: { userId: addressee.id, nickname: addressee.nickname },
+        requestedAt: cancelled.requestedAt,
+      };
+    });
   }
 }
