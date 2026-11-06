@@ -6,7 +6,6 @@ import { Body, Controller, Get, Headers, HttpCode, Inject, Param, Post, Query } 
 import { todo } from "../../../application/shared/todo.ts";
 import { z } from "zod";
 import { TASK_STATUSES } from "../../../domain/task/task-status.ts";
-import { parseTaskId } from "../../../domain/shared/id-parsers.ts";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import type { UserId } from "../../../domain/shared/ids.ts";
 import { CreateTaskUseCase } from "../../../application/usecases/tasks/create-task.usecase.ts";
@@ -113,10 +112,7 @@ export class TasksController {
    */
   @Get(":id")
   @HttpCode(200)
-  get(@CurrentUser() user: UserId, @Param("id") id: string): Promise<TaskView> {
-    return this.getTask.execute({
-      viewerId: user,
-      taskId: parseTaskId(id),
-    });
+  get(@CurrentUser() _user: UserId, @Param("id") _id: string): Promise<TaskView> {
+    return todo("TasksController.get");
   }
 }
