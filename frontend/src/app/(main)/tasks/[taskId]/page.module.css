@@ -264,10 +264,43 @@
   color: #8290a8;
 }
 
+.evidencePhotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.evidencePhotos a {
+  display: block;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f0f1f4;
+}
+
+.evidencePhotos img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
 .evidencePreviewUnavailable {
   margin: 8px 0 0;
   color: #8390a6;
   font-size: 12px;
+}
+
+.evidenceRefresh {
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: 1px solid #d5dbe5;
+  border-radius: 7px;
+  background: #fff;
+  color: #40516d;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 .evidenceError {
