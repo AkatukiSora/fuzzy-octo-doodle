@@ -33,6 +33,45 @@ spec:
           env:
             - name: PORT
               value: "8080"
+            - name: OBJECT_STORAGE_DRIVER
+              value: mock
+            # 1Password ItemのSecret同期後に、S3へ切り替えるまでは未設定でも起動できるよう任意参照にする。
+            - name: S3_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_ENDPOINT
+                  optional: true
+            - name: S3_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_REGION
+                  optional: true
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_BUCKET
+                  optional: true
+            - name: S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_ACCESS_KEY_ID
+                  optional: true
+            - name: S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_SECRET_ACCESS_KEY
+                  optional: true
+            - name: S3_FORCE_PATH_STYLE
+              valueFrom:
+                secretKeyRef:
+                  name: fuzzy-octo-doodle-s3
+                  key: S3_FORCE_PATH_STYLE
+                  optional: true
             # 認証方式が決まるまでの開発用の認証。固定の利用者として、認証なしで API を使える。
             # 公開ドメインに出るため、閉じたアプリの間だけ使う。backend は NODE_ENV=production だと
             # 起動に失敗するので、イメージの既定を上書きする。ID は seed Job が作る利用者。
