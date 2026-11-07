@@ -358,7 +358,6 @@ export default function TaskDetailPage({
                           {evidence.photoUrls.map((url, photoIndex) => (
                             <a href={url} target="_blank" rel="noopener noreferrer" key={photoIndex}>
                               {/* Signed URLs are loaded directly without image optimization. */}
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={url} alt={`${evidence.submissionType === "initial" ? "初回提出" : "追加提出"}の証拠写真${String(photoIndex + 1)}`} />
                             </a>
                           ))}
@@ -372,7 +371,9 @@ export default function TaskDetailPage({
                 <button
                   className={styles["evidenceRefresh"]}
                   type="button"
-                  onClick={() => setEvidenceReloadKey((key) => key + 1)}
+                  onClick={() => {
+                    setEvidenceReloadKey((key) => key + 1);
+                  }}
                 >
                   画像を再読み込み
                 </button>
