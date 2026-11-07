@@ -4,13 +4,13 @@ import type { PhotoAccessGrant } from "../../domain/task/visibility-policy.ts";
 
 /**
  * 責務: `ObjectStorage` port のモック実装。本物の保存先には接続しない。
- * 保存先の製品（GCS など）が決まるまでの間、アップロードと閲覧の流れ(URL の発行、存在の確認)を動かすために使う。
+ * 明示的に `OBJECT_STORAGE_DRIVER=mock` を選ぶ開発・テスト環境で、アップロードと閲覧の流れ(URL の発行、存在の確認)を動かすために使う。
  * 写真の中身はどこにも保存されない。発行する URL は形だけで、アクセスしても何も返らない。
  *
  * 実装の方針:
  * - 署名 URL は `http://localhost:8080/mock-storage/<パス>?expires=<秒>` の形にする。署名はない。
  * - `exists` は常に `true`。クライアントが申告した写真は、あるものとして扱う。
- * 本実装に差し替えるときは、このクラスを置き換え、PersistenceModule の束縛を変える。
+ * `OBJECT_STORAGE_DRIVER=s3` の環境では PersistenceModule が SignedUrlObjectStorage を束縛し、`mock` ではこのクラスを使う。
  *
  * 全体の流れ:
  * - IssueUploadUrls が `createSignedUploadUrl` を呼ぶ（アップロード用。パスは domain の issuePhotoPath がサーバー側で決める）。

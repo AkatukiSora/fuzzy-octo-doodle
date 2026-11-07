@@ -120,11 +120,14 @@ async execute(input: IssueUploadUrlsInput): Promise<UploadUrlsResult> {
       input.photos.map(async ({ slot, extension }) => {
         const path = issuePhotoPath(uploading, slot, extension);
 
-        // 署名URLはセッションの残り有効時間を超えないようにする
-        const remainingSeconds = Math.max(
-          1,
-          Math.ceil(
-            (session.uploadExpiresAt.getTime() - now.getTime()) / 1000,
+        // 署名URLはセッションの残り有効時間を超えず、最大300秒にする
+        const remainingSeconds = Math.min(
+          300,
+          Math.max(
+            1,
+            Math.ceil(
+              (session.uploadExpiresAt.getTime() - now.getTime()) / 1000,
+            ),
           ),
         );
 

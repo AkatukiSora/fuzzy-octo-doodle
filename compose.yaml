@@ -66,6 +66,7 @@ services:
         condition: service_completed_successfully
     environment:
       PORT: "8080"
+      OBJECT_STORAGE_DRIVER: mock
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
       DATABASE_NAME: app
