@@ -1,0 +1,166 @@
+.page {
+  width: min(100%, 720px);
+  height: calc(100dvh - 100px);
+  margin: 0 auto;
+  padding: 0 16px 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #303568;
+}
+
+.avatarCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  min-height: 190px;
+  margin-top: 12px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: #f8f6fc;
+}
+
+.avatar {
+  display: grid;
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 50%;
+  background: #d1c9bb;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarButton {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  border: 1px solid #e3def3;
+  border-radius: 12px;
+  background: white;
+  color: #77799e;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.imageIcon {
+  font-size: 1.5rem;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.form {
+  display: flex;
+  height: calc(100% - 2.5rem);
+  flex-direction: column;
+  margin-top: 16px;
+  padding: 24px 20px;
+  box-sizing: border-box;
+  border: 1px solid #eeeef2;
+  border-radius: var(--radius-lg);
+  background: white;
+}
+
+.nameField {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nameField label {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd9ed;
+  border-radius: 12px;
+  background: white;
+}
+
+.inputWrap:focus-within {
+  border-color: var(--color-primary);
+}
+
+.inputWrap input {
+  width: 100%;
+  min-width: 0;
+  padding: 16px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #303568;
+  font: inherit;
+  font-size: 1.1rem;
+}
+
+.inputWrap span {
+  padding-right: 16px;
+  color: #9999bc;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.saveButton {
+  width: 100%;
+  min-height: 58px;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: 5rem;
+  border: 0;
+  border-radius: 14px;
+  background: #c9c0f1;
+  color: white;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.saveButton:hover {
+  background: #b7aae9;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: 0 16px 12px;
+  }
+
+  .avatarCard {
+    gap: 20px;
+    min-height: 150px;
+    padding: 14px;
+  }
+
+  .avatar {
+    width: 112px;
+    height: 112px;
+  }
+
+  .avatarButton {
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 0.9rem;
+  }
+
+  .form {
+    height: calc(100% - 230px);
+    padding: 20px 16px;
+  }
+}
