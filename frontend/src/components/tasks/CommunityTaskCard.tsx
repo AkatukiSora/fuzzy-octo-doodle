@@ -75,7 +75,11 @@ export function CommunityTaskCard({
           : `期限まで${remainingTime}`;
 
   return (
-    <Card padding="md" variant="outlined">
+    <Card
+      padding="md"
+      variant="outlined"
+      className={styles["taskCard"]}
+    >
       <article className={styles["content"]}>
         {/* ユーザー情報 */}
         <div className={styles["header"]}>

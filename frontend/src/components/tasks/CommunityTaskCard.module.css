@@ -1,7 +1,11 @@
+.taskCard {
+  margin: 1rem 0;
+}
+
 .content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .header,
@@ -16,6 +20,7 @@
 .header,
 .footer {
   justify-content: space-between;
+
 }
 
 .userInfo {
@@ -37,6 +42,7 @@
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
+  margin-left: 0.2rem;
 }
 
 .userName {
@@ -60,7 +66,7 @@
 }
 
 .taskTitle {
-  margin: 0;
+  margin: 0 0 0.2rem;
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text);
@@ -89,7 +95,7 @@
 }
 
 .footer {
-  padding-top: 8px;
+  padding-top: 1px;
   border-top: 1px solid var(--color-border);
   gap: 8px;
 }
