@@ -5,6 +5,18 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ImagePreview.module.css";
 
+function EvidencePhoto({ src, alt, className }: {
+  src: string;
+  alt: string;
+  className?: string | undefined;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <span role="alert" className={styles["imageError"]}>証拠写真を読み込めませんでした。画面を再読み込みしてください。</span>;
+  }
+  return <img src={src} alt={alt} className={className} onError={() => { setFailed(true); }} />;
+}
+
 export interface PreviewImage {
   src: string;
   alt?: string;
@@ -162,7 +174,8 @@ export function ImagePreview({
             }}
             aria-label={`写真${String(index + 1)}を拡大`}
           >
-            <img
+            <EvidencePhoto
+              key={image.src}
               src={image.src}
               alt={image.alt ?? `証拠写真${String(index + 1)}`}
               className={styles["thumbnail"]}
@@ -199,7 +212,8 @@ export function ImagePreview({
                 ×
               </button>
 
-              <img
+              <EvidencePhoto
+                key={selectedImage.src}
                 src={selectedImage.src}
                 alt={selectedImage.alt ?? "拡大した証拠写真"}
                 className={styles["largeImage"]}
