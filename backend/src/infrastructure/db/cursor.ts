@@ -4,10 +4,11 @@ import type { Page } from "../../application/ports/task.repository.ts";
 export interface KeysetCursor {
   at: Date;
   id: string;
+  preciseAt?: string;
 }
 
 export function encodeCursor(c: KeysetCursor): string {
-  return Buffer.from(JSON.stringify({ t: c.at.toISOString(), id: c.id })).toString("base64url");
+  return Buffer.from(JSON.stringify({ t: c.preciseAt ?? c.at.toISOString(), id: c.id })).toString("base64url");
 }
 
 export function decodeCursor(raw: string): KeysetCursor {
@@ -16,8 +17,15 @@ export function decodeCursor(raw: string): KeysetCursor {
     if (typeof v === "object" && v !== null) {
       const t: unknown = Reflect.get(v, "t");
       const id: unknown = Reflect.get(v, "id");
-      if (typeof t === "string" && typeof id === "string" && !Number.isNaN(Date.parse(t))) {
-        return { at: new Date(t), id };
+      const timestamp = typeof t === "string" ? /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{3}|\d{6})Z$/.exec(t) : null;
+      const [, dateTime, fraction] = timestamp ?? [];
+      if (typeof t === "string" && dateTime !== undefined && fraction !== undefined && typeof id === "string") {
+        const milliseconds = fraction.length === 6 ? fraction.slice(0, 3) : fraction;
+        const millisecondIso = `${dateTime}.${milliseconds}Z`;
+        const at = new Date(millisecondIso);
+        if (!Number.isNaN(at.getTime()) && at.toISOString() === millisecondIso) {
+          return { at, id, preciseAt: t };
+        }
       }
     }
   } catch {

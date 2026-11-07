@@ -389,6 +389,7 @@ test("実HTTP APIは他人のtaskへのcompleteを拒否し隔離DBを不変に�
       "DATABASE_POOL_MAX",
       "DEV_AUTH_USER_ID",
       "NODE_ENV",
+      "OBJECT_STORAGE_DRIVER",
     ].map((name) => [name, process.env[name]]),
   );
   let serverStarted = false;
@@ -422,6 +423,7 @@ test("実HTTP APIは他人のtaskへのcompleteを拒否し隔離DBを不変に�
     process.env["DATABASE_SSL_MODE"] = "disable";
     process.env["DATABASE_POOL_MAX"] = "3";
     process.env["NODE_ENV"] = "test";
+    process.env["OBJECT_STORAGE_DRIVER"] = "mock";
 
     execFileSync(psql, [
       "-X", "-h", socketDir, "-p", String(port), "-U", "postgres", "-d", "postgres",

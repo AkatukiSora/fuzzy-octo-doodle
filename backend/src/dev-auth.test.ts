@@ -10,6 +10,7 @@ process.env["DATABASE_HOST"] = "127.0.0.1";
 process.env["DATABASE_NAME"] = "test";
 process.env["DATABASE_USER"] = "test";
 process.env["DATABASE_PASSWORD"] = "test";
+process.env["OBJECT_STORAGE_DRIVER"] = "mock";
 
 test("DEV_AUTH_USER_ID が未設定なら null（本物の認証を使う）", () => {
   assert.equal(loadDevAuthUserId({}), null);

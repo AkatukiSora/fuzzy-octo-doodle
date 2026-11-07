@@ -143,6 +143,18 @@ test("有効なセッションなら写真の署名URLを発行する", async ()
   assert.match(upload.uploadUrl, /expires=300/);
 });
 
+test("長いセッションでも署名URLは最大300秒で発行する", async () => {
+  const longSession: UploadSession = {
+    ...session,
+    uploadExpiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+  };
+  const result = await execute(setup(task, longSession));
+
+  const upload = result.uploads[0];
+  assert.ok(upload);
+  assert.match(upload.uploadUrl, /expires=300/);
+});
+
 test("タスクが存在しなければ NOT_FOUND", async () => {
   await expectError(execute(setup(null)), "NOT_FOUND");
 });

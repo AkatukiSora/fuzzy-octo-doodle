@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { FriendInviteView } from "../../../domain/friendship/friend-invite.ts";
 import type { UserSummary } from "../../../domain/friendship/friend-views.ts";
 import type { FriendRequestView } from "../../../domain/friendship/friend-views.ts";
+import type { FriendDetailView } from "../../../application/ports/usecases/get-friend-detail.port.ts";
 import { Body, Controller, Delete, Get, Headers, HttpCode, Inject, Param, Post, Query } from "@nestjs/common";
 import { CurrentUser } from "../auth/current-user.decorator.ts";
 import { Public } from "../auth/public.decorator.ts";
@@ -14,6 +15,7 @@ import { CancelFriendRequestUseCase } from "../../../application/usecases/friend
 import { CreateFriendInviteUseCase } from "../../../application/usecases/friends/create-friend-invite.usecase.ts";
 import { CreateFriendRequestUseCase } from "../../../application/usecases/friends/create-friend-request.usecase.ts";
 import { GetFriendInviteUseCase } from "../../../application/usecases/friends/get-friend-invite.usecase.ts";
+import { GetFriendDetailUseCase } from "../../../application/usecases/friends/get-friend-detail.usecase.ts";
 import { ListBlockedUsersUseCase } from "../../../application/usecases/friends/list-blocked-users.usecase.ts";
 import { ListFriendRequestsUseCase } from "../../../application/usecases/friends/list-friend-requests.usecase.ts";
 import { ListFriendsUseCase } from "../../../application/usecases/friends/list-friends.usecase.ts";
@@ -22,6 +24,10 @@ import { RemoveFriendUseCase } from "../../../application/usecases/friends/remov
 import { UnblockUserUseCase } from "../../../application/usecases/friends/unblock-user.usecase.ts";
 
 const createFriendRequestBodySchema = z.object({ inviteToken: z.string() });
+const friendDetailQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
 /**
  * 責務: 招待、フレンド申請、フレンド一覧、ブロックの HTTP 入出力を受け持ち、検証済み入力を対応 use case に渡す。関係の権限・状態遷移や repository 操作は所有しない。
  *
@@ -44,6 +50,7 @@ export class FriendsController {
     @Inject(CreateFriendInviteUseCase) protected readonly createFriendInvite: CreateFriendInviteUseCase,
     @Inject(CreateFriendRequestUseCase) protected readonly createFriendRequest: CreateFriendRequestUseCase,
     @Inject(GetFriendInviteUseCase) protected readonly getFriendInvite: GetFriendInviteUseCase,
+    @Inject(GetFriendDetailUseCase) protected readonly getFriendDetail: GetFriendDetailUseCase,
     @Inject(ListBlockedUsersUseCase) protected readonly listBlockedUsers: ListBlockedUsersUseCase,
     @Inject(ListFriendRequestsUseCase) protected readonly listFriendRequests: ListFriendRequestsUseCase,
     @Inject(ListFriendsUseCase) protected readonly listFriends: ListFriendsUseCase,
@@ -180,6 +187,32 @@ export class FriendsController {
   @HttpCode(200)
   list(@CurrentUser() user: UserId): Promise<readonly UserSummary[]> {
     return this.listFriends.execute({ userId: user });
+  }
+
+  /**
+   * accepted なフレンドのプロフィールと進行中タスクをページ単位で返す。
+   *
+   * HTTP: GET /api/friends/:userId → 200
+   * 認証: 必要（全体のOriginGuard/SessionAuthGuardを使用し、@Publicにはしない）
+   * 入力: CurrentUser、UUID形式の相手userId、cursor省略可/空不可、limit整数1〜50（既定20）。
+   * 呼び出し先: GetFriendDetailUseCase.execute
+   * 主な失敗: VALIDATION_ERROR / NOT_FOUND
+   */
+  @Get("friends/:userId")
+  @HttpCode(200)
+  getFriend(
+    @CurrentUser() user: UserId,
+    @Param("userId") rawFriendUserId: string,
+    @Query() query: Record<string, string | undefined>,
+  ): Promise<FriendDetailView> {
+    const friendUserId = parseUserId(z.string().parse(rawFriendUserId));
+    const { cursor, limit } = friendDetailQuerySchema.parse(query);
+    return this.getFriendDetail.execute({
+      userId: user,
+      friendUserId,
+      ...(cursor === undefined ? {} : { cursor }),
+      limit,
+    });
   }
 
   /**

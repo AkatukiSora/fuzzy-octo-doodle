@@ -31,6 +31,32 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "backend/scripts/verify-friends.mjs",
+      "backend/scripts/verify-friends-rollback.mjs",
+      "backend/scripts/verify-friends-rollback.test.mjs",
+    ],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      parserOptions: {
+        ...tseslint.configs.disableTypeChecked.languageOptions?.parserOptions,
+        project: false,
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {
+        AbortSignal: "readonly",
+        Buffer: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+      },
+    },
+  },
+  {
     // backend だけに適用する。frontend は React / DOM の型の都合で、型の変換が必要になる場面が多い。
     files: ["backend/**/*.ts"],
     rules: {

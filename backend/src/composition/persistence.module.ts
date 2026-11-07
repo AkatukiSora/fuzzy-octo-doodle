@@ -1,5 +1,6 @@
 import { Inject, Module } from "@nestjs/common";
 import type { OnApplicationShutdown } from "@nestjs/common";
+import { S3Client } from "@aws-sdk/client-s3";
 import type { Kysely } from "kysely";
 import { CLOCK } from "../application/ports/clock.port.ts";
 import { EVIDENCE_REPOSITORY, UPLOAD_SESSION_REPOSITORY } from "../application/ports/evidence.repository.ts";
@@ -27,14 +28,18 @@ import type { Database } from "../infrastructure/db/schema.ts";
 import { KyselyUnitOfWork } from "../infrastructure/db/unit-of-work.ts";
 import { RandomIdGenerator, SystemClock } from "../infrastructure/system/system.ts";
 import { OBJECT_STORAGE } from "../application/ports/object-storage.port.ts";
+import type { ObjectStorage } from "../application/ports/object-storage.port.ts";
 import { PAYMENT_GATEWAY } from "../application/ports/payment-gateway.port.ts";
 import { MockPaymentGateway } from "../infrastructure/payment/mock-payment-gateway.ts";
 import { MockObjectStorage } from "../infrastructure/storage/mock-object-storage.ts";
-// 保存先が決まったら、モックをやめてこちらに戻す。
-// import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage.ts";
+import { SignedUrlObjectStorage } from "../infrastructure/storage/object-storage.ts";
+import { loadObjectStorageConfig } from "../infrastructure/storage/s3-config.ts";
+import type { ObjectStorageConfig } from "../infrastructure/storage/s3-config.ts";
 
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
 const DATABASE = Symbol("Database");
+const OBJECT_STORAGE_CONFIG = Symbol("ObjectStorageConfig");
+const S3_CLIENT = Symbol("S3Client");
 
 /**
  * 責務: DB 接続と、DB・システム・外部サービスに依存する port の束縛。application が定義した port（インターフェース）に、
@@ -44,7 +49,7 @@ const DATABASE = Symbol("Database");
  * 終了時（SIGTERM など）は `onApplicationShutdown` で接続を閉じる。
  * 機能モジュールは、これを imports して `exports` の port を使う。
  *
- * 実装を差し替える箇所: ObjectStorage（保存先の製品が未決定。今はモック）、PaymentGateway（モックから Stripe へ）、認証は AuthModule。
+ * 実装を差し替える箇所: ObjectStorage（OBJECT_STORAGE_DRIVER でモック / S3互換実装を切り替える）、PaymentGateway（モックから Stripe へ）、認証は AuthModule。
  */
 @Module({
   providers: [
@@ -64,9 +69,29 @@ const DATABASE = Symbol("Database");
     { provide: IDEMPOTENCY_REPOSITORY, useClass: KyselyIdempotencyRepository },
     { provide: CLOCK, useClass: SystemClock },
     { provide: ID_GENERATOR, useClass: RandomIdGenerator },
-    // 本実装（保存先が決まったら、モックの代わりにこちらを使う）
-    // { provide: OBJECT_STORAGE, useClass: SignedUrlObjectStorage },
-    { provide: OBJECT_STORAGE, useClass: MockObjectStorage },
+    { provide: OBJECT_STORAGE_CONFIG, useFactory: () => loadObjectStorageConfig(process.env) },
+    {
+      provide: S3_CLIENT,
+      useFactory: (config: ObjectStorageConfig): S3Client | null => {
+        if (config.driver === "mock") return null;
+        return new S3Client({
+          endpoint: config.s3.endpoint,
+          region: config.s3.region,
+          forcePathStyle: config.s3.forcePathStyle,
+          credentials: {
+            accessKeyId: config.s3.accessKeyId,
+            secretAccessKey: config.s3.secretAccessKey,
+          },
+        });
+      },
+      inject: [OBJECT_STORAGE_CONFIG],
+    },
+    {
+      provide: OBJECT_STORAGE,
+      useFactory: (config: ObjectStorageConfig, client: S3Client | null): ObjectStorage =>
+        createObjectStorage(config, client),
+      inject: [OBJECT_STORAGE_CONFIG, S3_CLIENT],
+    },
     { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
   exports: [
@@ -90,12 +115,27 @@ const DATABASE = Symbol("Database");
 })
 export class PersistenceModule implements OnApplicationShutdown {
   private readonly handle: PostgresHandle;
+  private readonly s3Client: S3Client | null;
 
-  constructor(@Inject(POSTGRES_HANDLE) handle: PostgresHandle) {
+  constructor(
+    @Inject(POSTGRES_HANDLE) handle: PostgresHandle,
+    @Inject(S3_CLIENT) s3Client: S3Client | null,
+  ) {
     this.handle = handle;
+    this.s3Client = s3Client;
   }
 
   async onApplicationShutdown(): Promise<void> {
-    await this.handle.close();
+    try {
+      await this.handle.close();
+    } finally {
+      this.s3Client?.destroy();
+    }
   }
+}
+
+export function createObjectStorage(config: ObjectStorageConfig, client: S3Client | null): ObjectStorage {
+  if (config.driver === "mock") return new MockObjectStorage();
+  if (client === null) throw new Error("S3 storage client was not initialized");
+  return new SignedUrlObjectStorage(client, config.s3.bucket);
 }

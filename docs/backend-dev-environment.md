@@ -48,6 +48,7 @@ curl -i http://127.0.0.1:8080/healthz      # backend に直接。200 が返る
 | 変更したファイル | 起きること |
 | --- | --- |
 | `backend/src/**` | コンテナ内の同じ場所にコピーされる。コンテナ内の `tsx watch` が API を再起動する（数秒）。 |
+| `backend/scripts/**` | API コンテナ内の同じ場所にコピーされる。テスト実行時は最新のスクリプトを使う。 |
 | `backend/package.json`、`pnpm-lock.yaml`、`pnpm-workspace.yaml` | 開発用イメージを作り直し、コンテナを入れ替える（依存関係のインストールを含むため数十秒〜数分）。 |
 
 - `up --watch` を実行している端末を開いたままにする。閉じると監視が止まる。

@@ -33,6 +33,8 @@ spec:
               image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
               command: [node, dist/jobs-main.js, expire-initial-tasks]
               env:
+                - name: OBJECT_STORAGE_DRIVER
+                  value: mock
                 - name: DATABASE_HOST
                   value: fuzzy-octo-doodle-db-rw
                 - name: DATABASE_NAME_FILE
@@ -112,6 +114,8 @@ spec:
               image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
               command: [node, dist/jobs-main.js, close-review-periods]
               env:
+                - name: OBJECT_STORAGE_DRIVER
+                  value: mock
                 - name: DATABASE_HOST
                   value: fuzzy-octo-doodle-db-rw
                 - name: DATABASE_NAME_FILE
@@ -191,6 +195,8 @@ spec:
               image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
               command: [node, dist/jobs-main.js, expire-additional-evidence]
               env:
+                - name: OBJECT_STORAGE_DRIVER
+                  value: mock
                 - name: DATABASE_HOST
                   value: fuzzy-octo-doodle-db-rw
                 - name: DATABASE_NAME_FILE
@@ -270,6 +276,8 @@ spec:
               image: ghcr.io/akatukisora/fuzzy-octo-doodle-backend
               command: [node, dist/jobs-main.js, expire-stale-upload-sessions]
               env:
+                - name: OBJECT_STORAGE_DRIVER
+                  value: mock
                 - name: DATABASE_HOST
                   value: fuzzy-octo-doodle-db-rw
                 - name: DATABASE_NAME_FILE

@@ -16,6 +16,7 @@ import { UnblockUserUseCase } from "../application/usecases/friends/unblock-user
 import { ListFriendsUseCase } from "../application/usecases/friends/list-friends.usecase.ts";
 import { ListFriendRequestsUseCase } from "../application/usecases/friends/list-friend-requests.usecase.ts";
 import { ListBlockedUsersUseCase } from "../application/usecases/friends/list-blocked-users.usecase.ts";
+import { GetFriendDetailUseCase } from "../application/usecases/friends/get-friend-detail.usecase.ts";
 import { ObjectionsController } from "../presentation/http/objections/objections.controller.ts";
 import { FriendsController } from "../presentation/http/friends/friends.controller.ts";
 
@@ -30,6 +31,6 @@ import { FriendsController } from "../presentation/http/friends/friends.controll
 @Module({
   imports: [PersistenceModule, SharedApplicationModule],
   controllers: [ObjectionsController, FriendsController],
-  providers: [CreateObjectionUseCase, WithdrawObjectionUseCase, ListMyObjectionsUseCase, CreateFriendInviteUseCase, GetFriendInviteUseCase, CreateFriendRequestUseCase, AcceptFriendRequestUseCase, RejectFriendRequestUseCase, CancelFriendRequestUseCase, RemoveFriendUseCase, BlockUserUseCase, UnblockUserUseCase, ListFriendsUseCase, ListFriendRequestsUseCase, ListBlockedUsersUseCase],
+  providers: [CreateObjectionUseCase, WithdrawObjectionUseCase, ListMyObjectionsUseCase, CreateFriendInviteUseCase, GetFriendInviteUseCase, CreateFriendRequestUseCase, AcceptFriendRequestUseCase, RejectFriendRequestUseCase, CancelFriendRequestUseCase, RemoveFriendUseCase, BlockUserUseCase, UnblockUserUseCase, ListFriendsUseCase, ListFriendRequestsUseCase, ListBlockedUsersUseCase, GetFriendDetailUseCase],
 })
 export class SocialModule {}

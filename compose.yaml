@@ -7,6 +7,7 @@
 #
 # watch の動き（develop.watch）:
 #   - backend/src の変更    → コンテナにコピーする。コンテナ内の `tsx watch` が API を再起動する。
+#   - backend/scripts の変更 → API コンテナにコピーする。
 #   - frontend/src の変更   → コンテナにコピーする。コンテナ内の `next dev` が反映する。
 #   - package.json などの変更 → イメージを作り直して、コンテナを入れ替える。
 # 本番用のイメージ（backend/Dockerfile、frontend/Dockerfile）とは別物で、この設定は開発専用。
@@ -66,6 +67,7 @@ services:
         condition: service_completed_successfully
     environment:
       PORT: "8080"
+      OBJECT_STORAGE_DRIVER: mock
       DATABASE_HOST: db
       DATABASE_PORT: "5432"
       DATABASE_NAME: app
@@ -80,6 +82,10 @@ services:
         - action: sync
           path: ./backend/src
           target: /repo/backend/src
+        - action: sync
+          path: ./backend/scripts
+          target: /repo/backend/scripts
+          initial_sync: true
         - action: rebuild
           path: ./backend/package.json
         - action: rebuild

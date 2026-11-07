@@ -1,3 +1,4 @@
+import { sql } from "kysely";
 import type { ActiveTask, DisputedTask, ReviewingTask, Task } from "../../../domain/task/task.ts";
 import type { TaskId, UserId } from "../../../domain/shared/ids.ts";
 import { DomainError } from "../../../domain/shared/errors.ts";
@@ -54,9 +55,11 @@ export class KyselyTaskRepository implements TaskRepository {
 
   async listByOwner(tx: Tx, q: ListMyTasksQuery): Promise<Page<Task>> {
     const active = q.view === "active";
+    const cursorColumn = active ? "deadline_at" : "finalized_at";
     let qb = dbOf(tx)
       .selectFrom("tasks")
       .selectAll()
+      .select(sql<string>`to_char(${sql.ref(cursorColumn)} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`.as("cursor_at"))
       .where("user_id", "=", q.owner)
       .where("status", "in", active ? ["active", "reviewing", "disputed"] : ["success", "failed", "indeterminate", "closed"]);
     if (q.status !== undefined) qb = qb.where("status", "=", q.status);
@@ -66,9 +69,10 @@ export class KyselyTaskRepository implements TaskRepository {
     }
     if (q.cursor !== undefined) {
       const c = decodeCursor(q.cursor);
+      const cursorAt = sql<Date>`${c.preciseAt ?? c.at.toISOString()}::timestamptz`;
       qb = active
-        ? qb.where((eb) => eb.or([eb("deadline_at", ">", c.at), eb.and([eb("deadline_at", "=", c.at), eb("id", ">", c.id)])]))
-        : qb.where((eb) => eb.or([eb("finalized_at", "<", c.at), eb.and([eb("finalized_at", "=", c.at), eb("id", "<", c.id)])]));
+        ? qb.where((eb) => eb.or([eb(eb.ref(cursorColumn), ">", cursorAt), eb.and([eb(eb.ref(cursorColumn), "=", cursorAt), eb("id", ">", c.id)])]))
+        : qb.where((eb) => eb.or([eb(eb.ref(cursorColumn), "<", cursorAt), eb.and([eb(eb.ref(cursorColumn), "=", cursorAt), eb("id", "<", c.id)])]));
     }
     qb = active
       ? qb.orderBy("deadline_at", "asc").orderBy("id", "asc")
@@ -76,6 +80,7 @@ export class KyselyTaskRepository implements TaskRepository {
     const rows = await qb.limit(q.limit + 1).execute();
     return toPage(rows, q.limit, rowToTask, (r) => ({
       at: active ? r.deadline_at : nonNull(r.finalized_at, "tasks", "finalized_at"),
+      preciseAt: r.cursor_at,
       id: r.id,
     }));
   }

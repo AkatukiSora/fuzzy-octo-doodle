@@ -22,6 +22,7 @@ Cloudflare Tunnel ─┬─ /api → backend  (8080) ── database (CloudNativ
 | `networkpolicy.yaml` | 層ごとの許可する入口 |
 | `jobs/` | 定期ジョブ(未展開) |
 | `kustomization.yaml` | リソース一覧とイメージのタグ |
+| `../docs/object-storage.md` | S3互換ストレージ、Secret同期、権限、CORSの設定 |
 
 ## イメージ
 
@@ -40,6 +41,10 @@ GHCR のパッケージは public にする。イメージのビルドと公開�
 CloudNativePG が `fuzzy-octo-doodle-db-app`(接続情報)と `fuzzy-octo-doodle-db-ca`(CA 証明書)の Secret を生成する。backend は両方を読み取り専用ファイルとしてマウントし、`DATABASE_*_FILE` で参照する。接続は `verify-full` の TLS で、ホストは `fuzzy-octo-doodle-db-rw`。
 
 パスワードは Git に置かない。バックアップは設定しない(データが失われても許容できる閉じたアプリのため)。
+
+## オブジェクトストレージ
+
+backend は既定で `OBJECT_STORAGE_DRIVER=mock` のまま起動する。S3へ切り替える前に、`docs/object-storage.md` に従い1Password Item `fuzzy-octo-doodle-s3` をSecret `fuzzy-octo-doodle-s3` に同期し、非公開バケット、最小権限、CORSを準備する。Vault ID / Item ID を含むoperator設定はこのリポジトリに追加していない。Secretの任意参照は、S3を準備する間も現在のbackend Deploymentを起動可能にする。
 
 スキーマ(`backend/migrations/`)は、同期のたびに `migrate` の Job が適用する。Job は Argo CD の Sync フックで、Cluster が Healthy になったあと(wave 1)、アプリの更新(wave 3)より先に実行される。失敗すると同期が止まり、アプリは更新されない。イメージは `backend/Dockerfile.migrate` で作る。
 
