@@ -14,6 +14,7 @@
 }
 
 .linkBox {
+  position: relative;
   min-width: 0;
 }
 
@@ -21,7 +22,7 @@
   width: 100%;
   height: 52px;
   box-sizing: border-box;
-  padding: 0 14px;
+  padding: 0 52px 0 14px;
   border: 1px solid #e8e3f5;
   border-radius: 12px;
   background: #f6f3ff;
@@ -86,4 +87,28 @@
 .linkInput:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.inlineCopy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6940d7;
+  cursor: pointer;
+}
+
+.inlineCopy:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inlineCopy:focus-visible {
+  outline: 2px solid var(--color-primary);
 }

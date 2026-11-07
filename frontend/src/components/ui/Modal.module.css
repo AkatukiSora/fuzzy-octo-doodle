@@ -19,11 +19,12 @@
 }
 
 .content {
+  position: relative;
   padding: 24px;
 }
 
 .title {
-  margin: 0 0 12px;
+  margin: 0 32px 12px 0;
   font-size: 18px;
   font-weight: 700;
   color: #303044;
@@ -87,4 +88,22 @@
   .content {
     padding: 20px;
   }
+}
+.closeButton {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }

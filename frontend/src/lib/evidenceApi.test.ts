@@ -29,6 +29,7 @@ test("タスクIDを安全に符号化し、証拠の種別と提出日時を取
     evidences: [{
       submissionType: evidence.submissionType,
       submittedAt: evidence.submittedAt,
+      photoCount: 2,
       photoUrls: evidence.photoUrls,
     }],
   });
