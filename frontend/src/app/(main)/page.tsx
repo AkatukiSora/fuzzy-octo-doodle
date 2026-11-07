@@ -116,7 +116,7 @@ export default function HomePage() {
             status={post.status}
             reactions={post.reactions}
             onDetailClick={() => {
-              router.push(`/tasks/${encodeURIComponent(post.taskId)}/review`);
+              router.push(`/tasks/${encodeURIComponent(post.taskId)}`);
             }}
             onReactionClick={(reactionType, reacted) => {
               void handleReaction(post.id, reactionType, reacted);
