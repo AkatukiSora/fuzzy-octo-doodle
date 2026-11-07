@@ -6,145 +6,88 @@ import { PageHeader } from "../../../../../components/layout/PageHeader";
 import { ObjectionButton } from "../../../../../components/layout/ObjectionButton";
 import { BottomNavigation } from "../../../../../components/layout/BottomNavigation";
 import { TaskInfoCard } from "../../../../../components/tasks/TaskInfoCard";
+import { ImagePreview } from "../../../../../components/ui/ImagePreview";
 import { EmptyState } from "../../../../../components/ui/EmptyState";
 import { ErrorState } from "../../../../../components/ui/ErrorState";
 import { Loading } from "../../../../../components/ui/Loading";
-import type { TaskStatus } from "../../../../../types/task";
+import { fetchObjectionTask } from "../../../../../lib/objectionTaskApi";
+import type { ObjectionTask } from "../../../../../lib/objectionTaskApi";
+import { fetchTaskEvidences } from "../../../../../lib/taskEvidenceApi";
+import type { TaskEvidencesResult } from "../../../../../lib/taskEvidenceApi";
 
-// タスク詳細APIから受け取って画面に表示するデータの型。
-interface TaskDetails {
-  title: string;
-  achievementCondition: string;
-  deadlineAt: string;
-  status: TaskStatus;
-}
+function EvidenceSection({ taskId }: { taskId: string }) {
+  const [result, setResult] = useState<TaskEvidencesResult | null>(null);
 
-const taskStatuses: readonly TaskStatus[] = [
-  "active",
-  "reviewing",
-  "disputed",
-  "success",
-  "failed",
-  "indeterminate",
-  "closed",
-];
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchTaskEvidences(taskId, controller.signal).then((data) => {
+      if (!controller.signal.aborted) setResult(data);
+    }).catch(() => {
+      if (!controller.signal.aborted) setResult({ kind: "error", status: 0 });
+    });
+    return () => { controller.abort(); };
+  }, [taskId]);
 
-function isTaskStatus(value: unknown): value is TaskStatus {
-  return typeof value === "string" &&
-    taskStatuses.some((taskStatus) => taskStatus === value);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseTaskDetails(value: unknown): TaskDetails {
-  if (
-    !isRecord(value) ||
-    typeof value["title"] !== "string" ||
-    typeof value["achievementCondition"] !== "string" ||
-    typeof value["deadlineAt"] !== "string" ||
-    !isTaskStatus(value["status"])
-  ) {
-    throw new Error("タスク情報の形式が正しくありません。");
+  if (!result) return <Loading message="証拠写真を読み込んでいます..." />;
+  if (result.kind === "forbidden") {
+    return <EmptyState title="証拠写真を閲覧する権限がありません" />;
+  }
+  if (result.kind === "error") {
+    return <ErrorState description="証拠写真を取得できませんでした。画面を再読み込みしてください。" />;
   }
 
-  return {
-    title: value["title"],
-    achievementCondition: value["achievementCondition"],
-    deadlineAt: value["deadlineAt"],
-    status: value["status"],
-  };
+  const images = result.evidences.flatMap((evidence) =>
+    evidence.photoUrls.map((src) => ({ src })),
+  );
+  if (images.length === 0) return <EmptyState title="提出された証拠写真はありません" />;
+  return <ImagePreview images={images} />;
 }
 
-// APIの日時文字列を、日本時間の表示用文字列に変換する。
-function formatDeadline(value: string): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "Asia/Tokyo",
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-export default function ReviewHome() {
-  // URLの /tasks/[taskId]/review からタスクIDを取り出す。
-  const { taskId } = useParams<{ taskId: string }>();
+function TaskReview({ taskId }: { taskId: string }) {
   const router = useRouter();
-
-  // APIから取得したタスク、読み込み中かどうか、取得失敗したかどうかを保持する。
-  const [task, setTask] = useState<TaskDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [task, setTask] = useState<ObjectionTask | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // タスクIDごとに詳細APIを呼び出してタスクを取得する。
-    async function loadTask() {
-      setIsLoading(true);
-      setError(false);
-
-      try {
-        // URLの一部として安全に使えるようにIDをエンコードしてGETする。
-        const response = await fetch(
-          `/api/tasks/${encodeURIComponent(taskId)}`,
-        );
-
-        // 404など、成功以外のHTTP応答はエラー表示にする。
-        if (!response.ok) {
-          throw new Error("タスク情報を取得できませんでした。");
-        }
-
-        // レスポンスJSONをTaskDetails型として読み込み、Stateに保存する。
-        const body: unknown = await response.json();
-        setTask(parseTaskDetails(body));
-      } catch {
-        // 通信失敗やHTTPエラーが起きたことを画面に知らせる。
-        setError(true);
-      } finally {
-        // 成功・失敗に関係なく読み込み表示を終了する。
-        setIsLoading(false);
-      }
-    }
-
-    // useEffect自体をasyncにせず、取得処理を開始する。
-    void loadTask();
+    const controller = new AbortController();
+    void fetchObjectionTask(taskId, controller.signal).then((data) => {
+      if (!controller.signal.aborted) setTask(data);
+    }).catch(() => {
+      if (!controller.signal.aborted) setError(true);
+    });
+    return () => { controller.abort(); };
   }, [taskId]);
 
-  // APIの応答を待っている間はローディングを表示する。
-  if (isLoading) {
-    return <Loading message="タスクを読み込んでいます..." />;
-  }
+  if (error) return <ErrorState description="タスク情報を取得できませんでした。" />;
+  if (!task) return <Loading message="タスクを読み込んでいます..." />;
+
+  const deadline = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(task.deadlineAt));
 
   return (
     <>
-      <PageHeader title="タスクの詳細" backHref="/" />
-      {error ? (
-        // API取得に失敗したときの表示。
-        <ErrorState description="タスク情報を取得できませんでした。" />
-      ) : task ? (
-        <>
-          {/* APIから取得したタスク名・期限・達成条件を表示する。 */}
-          <TaskInfoCard
-            title={task.title}
-            deadline={formatDeadline(task.deadlineAt)}
-            condition={task.achievementCondition}
-          />
+      <TaskInfoCard title={task.title} deadline={deadline} condition={task.achievementCondition} />
+      <EvidenceSection key={taskId} taskId={taskId} />
+      {/* 提出者メモと審査終了日時は現在のAPIに含まれないため表示しない。 */}
+      {/* 表示条件は補助。申立て時の認可・状態検証はバックエンドで行う。 */}
+      {task.status === "reviewing" && task.viewer === "friend" && (
+        <ObjectionButton onClick={() => {
+          router.push(`/tasks/${encodeURIComponent(taskId)}/objection`);
+        }} />
+      )}
+    </>
+  );
+}
 
-          {/* 審査中のタスクだけ異議申し立てボタンを表示する。 */}
-          {task.status === "reviewing" ? (
-            <ObjectionButton
-              onClick={() => {
-                router.push(`/tasks/${encodeURIComponent(taskId)}/objection`);
-              }}
-            />
-          ) : (
-            // 審査中でない場合は、証拠確認の対象外であることを表示する。
-            <EmptyState
-              title="確認できる証拠はありません"
-              description="証拠の確認と異議申し立ては、審査中のタスクで利用できます。"
-            />
-          )}
-        </>
-      ) : null}
+export default function ReviewHome() {
+  const { taskId } = useParams<{ taskId: string }>();
+  return (
+    <>
+      <PageHeader title="タスクの詳細" backHref="/" />
+      <TaskReview key={taskId} taskId={taskId} />
       <BottomNavigation />
     </>
   );

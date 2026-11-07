@@ -12,6 +12,7 @@ export interface TaskEvidence {
   submissionType: "initial" | "additional";
   submittedAt: string;
   photoCount: number;
+  photoUrls: string[];
 }
 
 export type TaskEvidencesResult =
@@ -38,6 +39,7 @@ export async function fetchTaskEvidences(
       submissionType,
       submittedAt,
       photoCount: photoUrls.length,
+      photoUrls,
     })),
   };
 }

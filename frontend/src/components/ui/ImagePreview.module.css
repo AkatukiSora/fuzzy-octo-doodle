@@ -208,3 +208,11 @@
     max-height: 55dvh;
   }
 }
+
+.imageError {
+  display: block;
+  padding: 16px;
+  color: #b42318;
+  background: #fff1f0;
+  font-size: 14px;
+}
