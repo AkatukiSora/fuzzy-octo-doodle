@@ -3,7 +3,7 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/.next/**", "**/node_modules/**", "**/next-env.d.ts", "eslint.config.mjs", "**/scripts/**/*.mjs"] },
+  { ignores: ["**/dist/**", "**/.next/**", "**/node_modules/**", "**/next-env.d.ts", "eslint.config.mjs"] },
   eslint.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
@@ -28,6 +28,28 @@ export default tseslint.config(
         // node:test の test() は最上位で await しない前提の API
         { allowForKnownSafeCalls: [{ from: "package", package: "node:test", name: ["test"] }] },
       ],
+    },
+  },
+  {
+    files: ["backend/scripts/verify-friends.mjs"],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      parserOptions: {
+        ...tseslint.configs.disableTypeChecked.languageOptions?.parserOptions,
+        project: false,
+        projectService: false,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {
+        AbortSignal: "readonly",
+        Buffer: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+      },
     },
   },
   {
