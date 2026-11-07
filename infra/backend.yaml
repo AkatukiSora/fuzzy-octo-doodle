@@ -34,7 +34,7 @@ spec:
             - name: PORT
               value: "8080"
             - name: OBJECT_STORAGE_DRIVER
-              value: mock
+              value: s3
             # 1Password ItemのSecret同期後に、S3へ切り替えるまでは未設定でも起動できるよう任意参照にする。
             - name: S3_ENDPOINT
               valueFrom:
