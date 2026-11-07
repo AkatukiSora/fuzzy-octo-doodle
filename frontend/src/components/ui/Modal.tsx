@@ -12,7 +12,8 @@ interface ModalProps {
   confirmText?: string;
   cancelText?: string;
   confirmVariant?: "primary" | "danger";
-  onConfirm: () => void;
+  onConfirm?: () => void;
+  showCloseButton?: boolean;
   onClose: () => void;
   isLoading?: boolean;
 }
@@ -25,6 +26,7 @@ export function Modal({
   cancelText = "キャンセル",
   confirmVariant = "primary",
   onConfirm,
+  showCloseButton = false,
   onClose,
   isLoading = false,
 }: ModalProps) {
@@ -69,9 +71,14 @@ export function Modal({
           {title}
         </h2>
 
+        {showCloseButton && (
+          <button type="button" className={styles["closeButton"]} onClick={onClose} aria-label="閉じる">
+            ×
+          </button>
+        )}
         <div className={styles["body"]}>{children}</div>
 
-        <div className={styles["actions"]}>
+        {onConfirm && <div className={styles["actions"]}>
           <button
             type="button"
             className={styles["cancelButton"]}
@@ -91,7 +98,7 @@ export function Modal({
           >
             {isLoading ? "処理中..." : confirmText}
           </button>
-        </div>
+        </div>}
       </div>
     </dialog>
   );

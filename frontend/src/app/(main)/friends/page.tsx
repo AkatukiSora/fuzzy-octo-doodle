@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FriendsHeader } from "../../../components/friends/FriendsHeader";
 import { FriendCard } from "../../../components/friends/FriendCard";
 import { FriendRequestCard } from "../../../components/friends/FriendRequestCard";
-import { BottomNavigation } from "../../../components/layout/BottomNavigation";
+import { AppLayout } from "../../../components/layout/AppLayout";
 import type { Friend } from "../../../components/friends/friend.types";
 
 interface FriendRequestApiItem {
@@ -110,7 +110,7 @@ export default function FriendsPage() {
   // }, []);
 
   return (
-    <>
+    <AppLayout showHeader={false}>
       <FriendsHeader activeTab={activeTab} onTabChange={setActiveTab} />
       {activeTab === "list" ? (
         friends.map((friend) => (
@@ -134,7 +134,6 @@ export default function FriendsPage() {
           />
         ))
       )}
-      <BottomNavigation />
-    </>
+    </AppLayout>
   );
 }

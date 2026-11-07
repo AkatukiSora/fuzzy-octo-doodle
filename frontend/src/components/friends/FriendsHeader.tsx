@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { FriendInviteModal } from "./FriendInviteModal";
 import styles from "./FriendsHeader.module.css";
 
 interface FriendsHeaderProps {
@@ -9,13 +10,16 @@ interface FriendsHeaderProps {
 }
 
 export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
+  const [inviteOpen, setInviteOpen] = useState(false);
   return (
     <header className={styles["header"]}>
       <h1 className={styles["title"]}>フレンド</h1>
-      <Link
+      <button
         className={styles["requestLink"]}
-        href="/friends/requests"
-        aria-label="フレンド申請を見る"
+        type="button"
+        onClick={() => { setInviteOpen(true); }}
+        aria-label="フレンドを招待"
+        aria-haspopup="dialog"
       >
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
@@ -26,7 +30,8 @@ export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
             strokeLinejoin="round"
           />
         </svg>
-      </Link>
+      </button>
+      {inviteOpen && <FriendInviteModal onClose={() => { setInviteOpen(false); }} />}
       <label className={styles["search"]}>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" strokeWidth="1.8" />

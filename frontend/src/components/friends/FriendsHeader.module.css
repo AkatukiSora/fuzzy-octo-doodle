@@ -19,6 +19,10 @@
 }
 
 .requestLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   grid-column: 3;
   justify-self: end;
   display: grid;
