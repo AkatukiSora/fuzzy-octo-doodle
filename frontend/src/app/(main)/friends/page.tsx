@@ -19,6 +19,34 @@ interface PendingFriend {
   requestedAtText: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseFriendRequestApiItems(value: unknown): FriendRequestApiItem[] {
+  if (!Array.isArray(value)) {
+    throw new Error("招待中フレンドの形式が不正です");
+  }
+
+  return value.map((item) => {
+    if (
+      !isRecord(item) ||
+      typeof item["id"] !== "string" ||
+      !isRecord(item["addressee"]) ||
+      typeof item["addressee"]["nickname"] !== "string" ||
+      typeof item["requestedAt"] !== "string"
+    ) {
+      throw new Error("招待中フレンドの形式が不正です");
+    }
+
+    return {
+      id: item["id"],
+      addressee: { nickname: item["addressee"]["nickname"] },
+      requestedAt: item["requestedAt"],
+    };
+  });
+}
+
 const copyfriends: Friend[] = [
   { id: "1", name: "佐藤", avatarUrl: "/images/pazul.jpg" },
   { id: "3", name: "k", avatarUrl: "/images/pazul.jpg" },
@@ -47,7 +75,8 @@ export default function FriendsPage() {
         });
         if (!response.ok) throw new Error("招待中のフレンドを取得できませんでした");
 
-        const requests: FriendRequestApiItem[] = await response.json();
+        const body: unknown = await response.json();
+        const requests = parseFriendRequestApiItems(body);
         setPendingFriends(
           requests.map((request) => ({
             id: request.id,
@@ -66,7 +95,9 @@ export default function FriendsPage() {
     }
 
     void loadPendingFriends();
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+    };
   }, [activeTab]);
   // useEffect(() => {
   //   async function loadFriends() {

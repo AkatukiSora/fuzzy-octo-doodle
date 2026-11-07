@@ -19,6 +19,44 @@ interface TaskDetails {
   status: TaskStatus;
 }
 
+const taskStatuses: readonly TaskStatus[] = [
+  "active",
+  "reviewing",
+  "disputed",
+  "success",
+  "failed",
+  "indeterminate",
+  "closed",
+];
+
+function isTaskStatus(value: unknown): value is TaskStatus {
+  return typeof value === "string" &&
+    taskStatuses.some((taskStatus) => taskStatus === value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseTaskDetails(value: unknown): TaskDetails {
+  if (
+    !isRecord(value) ||
+    typeof value["title"] !== "string" ||
+    typeof value["achievementCondition"] !== "string" ||
+    typeof value["deadlineAt"] !== "string" ||
+    !isTaskStatus(value["status"])
+  ) {
+    throw new Error("タスク情報の形式が正しくありません。");
+  }
+
+  return {
+    title: value["title"],
+    achievementCondition: value["achievementCondition"],
+    deadlineAt: value["deadlineAt"],
+    status: value["status"],
+  };
+}
+
 // APIの日時文字列を、日本時間の表示用文字列に変換する。
 function formatDeadline(value: string): string {
   return new Intl.DateTimeFormat("ja-JP", {
@@ -56,8 +94,8 @@ export default function ReviewHome() {
         }
 
         // レスポンスJSONをTaskDetails型として読み込み、Stateに保存する。
-        const data: TaskDetails = await response.json();
-        setTask(data);
+        const body: unknown = await response.json();
+        setTask(parseTaskDetails(body));
       } catch {
         // 通信失敗やHTTPエラーが起きたことを画面に知らせる。
         setError(true);

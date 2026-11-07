@@ -38,7 +38,9 @@ export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
         <button
           type="button"
           className={[styles["tab"] ?? "", activeTab === "list" ? styles["activeTab"] ?? "" : ""].join(" ")}
-          onClick={() => onTabChange("list")}
+          onClick={() => {
+            onTabChange("list");
+          }}
           aria-pressed={activeTab === "list"}
         >
           フレンド一覧
@@ -46,7 +48,9 @@ export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
         <button
           type="button"
           className={[styles["tab"] ?? "", activeTab === "inviting" ? styles["activeTab"] ?? "" : ""].join(" ")}
-          onClick={() => onTabChange("inviting")}
+          onClick={() => {
+            onTabChange("inviting");
+          }}
           aria-pressed={activeTab === "inviting"}
         >
           招待中
