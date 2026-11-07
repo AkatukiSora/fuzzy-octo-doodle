@@ -10,9 +10,9 @@ const fallbackImageSrc = "/images/pazul.jpg";
 
 function showFallbackImage(event: SyntheticEvent<HTMLImageElement>) {
   const image = event.currentTarget;
-  if (image.dataset.fallbackApplied === "true") return;
+  if (image.dataset["fallbackApplied"] === "true") return;
 
-  image.dataset.fallbackApplied = "true";
+  image.dataset["fallbackApplied"] = "true";
   image.src = fallbackImageSrc;
 }
 
