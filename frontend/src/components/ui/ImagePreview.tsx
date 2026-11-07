@@ -2,8 +2,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ImagePreview.module.css";
+
+const fallbackImageSrc = "/images/pazul.jpg";
+
+function showFallbackImage(event: SyntheticEvent<HTMLImageElement>) {
+  const image = event.currentTarget;
+  if (image.dataset.fallbackApplied === "true") return;
+
+  image.dataset.fallbackApplied = "true";
+  image.src = fallbackImageSrc;
+}
 
 export interface PreviewImage {
   src: string;
@@ -166,6 +177,7 @@ export function ImagePreview({
               src={image.src}
               alt={image.alt ?? `証拠写真${String(index + 1)}`}
               className={styles["thumbnail"]}
+              onError={showFallbackImage}
             />
           </button>
         ))}
@@ -203,6 +215,7 @@ export function ImagePreview({
                 src={selectedImage.src}
                 alt={selectedImage.alt ?? "拡大した証拠写真"}
                 className={styles["largeImage"]}
+                onError={showFallbackImage}
               />
 
               {images.length > 1 && (

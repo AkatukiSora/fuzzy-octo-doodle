@@ -84,10 +84,14 @@
   display: grid;
   min-height: 52px;
   place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #828ba3;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .activeTab {

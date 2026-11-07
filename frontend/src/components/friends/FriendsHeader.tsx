@@ -3,7 +3,12 @@
 import Link from "next/link";
 import styles from "./FriendsHeader.module.css";
 
-export function FriendsHeader() {
+interface FriendsHeaderProps {
+  activeTab: "list" | "inviting";
+  onTabChange: (tab: "list" | "inviting") => void;
+}
+
+export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
   return (
     <header className={styles["header"]}>
       <h1 className={styles["title"]}>フレンド</h1>
@@ -30,16 +35,22 @@ export function FriendsHeader() {
         <input type="search" placeholder="フレンドを検索" />
       </label>
       <nav className={styles["tabs"]} aria-label="フレンドメニュー">
-        <Link
-          className={[styles["tab"] ?? "", styles["activeTab"] ?? ""].join(" ")}
-          href="/friends"
-          aria-current="page"
+        <button
+          type="button"
+          className={[styles["tab"] ?? "", activeTab === "list" ? styles["activeTab"] ?? "" : ""].join(" ")}
+          onClick={() => onTabChange("list")}
+          aria-pressed={activeTab === "list"}
         >
           フレンド一覧
-        </Link>
-        <Link className={styles["tab"]} href="/friends/invite">
+        </button>
+        <button
+          type="button"
+          className={[styles["tab"] ?? "", activeTab === "inviting" ? styles["activeTab"] ?? "" : ""].join(" ")}
+          onClick={() => onTabChange("inviting")}
+          aria-pressed={activeTab === "inviting"}
+        >
           招待中
-        </Link>
+        </button>
       </nav>
     </header>
   );
