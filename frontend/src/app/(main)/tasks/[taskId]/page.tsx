@@ -342,6 +342,7 @@ export default function TaskDetailPage({
                 </div>
               )}
               {visibleEvidenceState.kind === "loaded" && visibleEvidenceState.evidences.length > 0 && (
+                <>
                 <ol className={styles["evidenceList"]}>
                   {visibleEvidenceState.evidences.map((evidence, index) => (
                     <li
@@ -352,14 +353,30 @@ export default function TaskDetailPage({
                         <strong>{evidence.submissionType === "initial" ? "初回提出" : "追加提出"}</strong>
                         <time dateTime={evidence.submittedAt}>{formatDate(evidence.submittedAt, true)}</time>
                       </div>
-                      <p className={styles["evidencePreviewUnavailable"]}>
-                        {evidence.photoCount > 0
-                          ? `写真${String(evidence.photoCount)}枚のプレビューは利用できません。`
-                          : "写真は登録されていません。"}
-                      </p>
+                      {evidence.photoUrls.length > 0 ? (
+                        <div className={styles["evidencePhotos"]}>
+                          {evidence.photoUrls.map((url, photoIndex) => (
+                            <a href={url} target="_blank" rel="noopener noreferrer" key={photoIndex}>
+                              {/* Signed URLs are loaded directly without image optimization. */}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={url} alt={`${evidence.submissionType === "initial" ? "初回提出" : "追加提出"}の証拠写真${String(photoIndex + 1)}`} />
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={styles["evidencePreviewUnavailable"]}>写真は登録されていません。</p>
+                      )}
                     </li>
                   ))}
                 </ol>
+                <button
+                  className={styles["evidenceRefresh"]}
+                  type="button"
+                  onClick={() => setEvidenceReloadKey((key) => key + 1)}
+                >
+                  画像を再読み込み
+                </button>
+                </>
               )}
               {visibleEvidenceState.kind === "forbidden" && (
                 <div className={styles["evidenceError"]} role="alert">

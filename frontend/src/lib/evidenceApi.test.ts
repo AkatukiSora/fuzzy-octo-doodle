@@ -5,7 +5,10 @@ import { fetchTaskEvidences } from "./taskEvidenceApi.ts";
 const evidence = {
   submissionType: "additional",
   submittedAt: "2026-11-07T03:30:00.000Z",
-  photoUrls: ["http://localhost:8080/mock-storage/shape-only"],
+  photoUrls: [
+    "https://storage.googleapis.com/donee/1.png?X-Amz-Signature=abc%2F123&X-Amz-Expires=60",
+    "https://storage.googleapis.com/donee/2.png?X-Amz-Signature=def&X-Amz-Expires=60",
+  ],
 };
 
 test("タスクIDを安全に符号化し、証拠の種別と提出日時を取得する", async (t) => {
@@ -26,7 +29,7 @@ test("タスクIDを安全に符号化し、証拠の種別と提出日時を取
     evidences: [{
       submissionType: evidence.submissionType,
       submittedAt: evidence.submittedAt,
-      photoCount: 1,
+      photoUrls: evidence.photoUrls,
     }],
   });
 });

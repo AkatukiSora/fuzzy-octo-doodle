@@ -11,7 +11,7 @@ const evidenceListSchema = z.object({
 export interface TaskEvidence {
   submissionType: "initial" | "additional";
   submittedAt: string;
-  photoCount: number;
+  photoUrls: string[];
 }
 
 export type TaskEvidencesResult =
@@ -37,7 +37,7 @@ export async function fetchTaskEvidences(
     evidences: result.data.evidences.map(({ submissionType, submittedAt, photoUrls }) => ({
       submissionType,
       submittedAt,
-      photoCount: photoUrls.length,
+      photoUrls,
     })),
   };
 }
