@@ -96,13 +96,14 @@ class FakeSessions implements UploadSessionRepository {
 function setup(
   currentTask: Task | null = task,
   currentSession: UploadSession | null = session,
+  storage = new MockObjectStorage(),
 ): IssueUploadUrlsUseCase {
   return new IssueUploadUrlsUseCase(
     uow,
     clock,
     new FakeTasks(currentTask),
     new FakeSessions(currentSession),
-    new MockObjectStorage(),
+    storage,
   );
 }
 
@@ -129,7 +130,9 @@ async function expectError(
   });
 }
 test("有効なセッションなら写真の署名URLを発行する", async () => {
-  const result = await execute(setup());
+  let storageNow = now.getTime();
+  const storage = new MockObjectStorage(undefined, () => storageNow);
+  const result = await execute(setup(task, session, storage));
 
   assert.equal(result.uploads.length, 1);
 
@@ -140,7 +143,11 @@ test("有効なセッションなら写真の署名URLを発行する", async ()
     upload.path,
     `evidence/${taskId}/${sessionId}/1.jpg`,
   );
-  assert.match(upload.uploadUrl, /expires=300/);
+  const token = upload.uploadUrl.slice("/api/mock-storage/".length);
+  storageNow += 299_000;
+  assert.equal(storage.authorize(token, "PUT"), upload.path);
+  storageNow += 1000;
+  assert.throws(() => storage.authorize(token, "PUT"), { code: "FORBIDDEN" });
 });
 
 test("長いセッションでも署名URLは最大300秒で発行する", async () => {
@@ -148,11 +155,17 @@ test("長いセッションでも署名URLは最大300秒で発行する", async
     ...session,
     uploadExpiresAt: new Date(now.getTime() + 10 * 60 * 1000),
   };
-  const result = await execute(setup(task, longSession));
+  let storageNow = now.getTime();
+  const storage = new MockObjectStorage(undefined, () => storageNow);
+  const result = await execute(setup(task, longSession, storage));
 
   const upload = result.uploads[0];
   assert.ok(upload);
-  assert.match(upload.uploadUrl, /expires=300/);
+  const token = upload.uploadUrl.slice("/api/mock-storage/".length);
+  storageNow += 299_000;
+  assert.equal(storage.authorize(token, "PUT"), upload.path);
+  storageNow += 1000;
+  assert.throws(() => storage.authorize(token, "PUT"), { code: "FORBIDDEN" });
 });
 
 test("タスクが存在しなければ NOT_FOUND", async () => {

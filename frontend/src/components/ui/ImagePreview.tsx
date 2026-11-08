@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./ImagePreview.module.css";
 
-function EvidencePhoto({ src, alt, className }: {
+export function EvidencePhoto({ src, alt, className }: {
   src: string;
   alt: string;
   className?: string | undefined;

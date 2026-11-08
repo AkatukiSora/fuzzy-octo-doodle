@@ -5,15 +5,17 @@ import { parseStoragePath } from "./domain/shared/storage-path.ts";
 import { MockPaymentGateway } from "./infrastructure/payment/mock-payment-gateway.ts";
 import { MockObjectStorage } from "./infrastructure/storage/mock-object-storage.ts";
 
-const path = parseStoragePath("tasks/abc/photo-1.jpg");
+const path = parseStoragePath("evidence/abc/photo-1.jpg");
 
-test("モックの保存先は、パスと有効期限を含む URL を返す", async () => {
-  const url = await new MockObjectStorage().createSignedUploadUrl(path, 300);
-  assert.equal(url, "http://localhost:8080/mock-storage/tasks/abc/photo-1.jpg?expires=300");
+test("モックの保存先は、同一オリジンの検証可能なPUT URLを返す", async () => {
+  const storage = new MockObjectStorage();
+  const url = await storage.createSignedUploadUrl(path, 300);
+  assert.ok(url.startsWith("/api/mock-storage/"));
+  assert.equal(storage.authorize(url.slice("/api/mock-storage/".length), "PUT"), path);
 });
 
-test("モックの保存先は、どのパスも存在するとして扱う", async () => {
-  assert.equal(await new MockObjectStorage().exists(path), true);
+test("モックの保存先は、未保存の画像を存在すると扱わない", async () => {
+  assert.equal(await new MockObjectStorage().exists(path), false);
 });
 
 test("モックの決済は、作成前の確認が常に成功する", async () => {

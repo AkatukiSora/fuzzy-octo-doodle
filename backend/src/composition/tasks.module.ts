@@ -1,3 +1,4 @@
+import { MockStorageController } from "../presentation/http/evidence/mock-storage.controller.ts";
 import { Module } from "@nestjs/common";
 import { PersistenceModule } from "./persistence.module.ts";
 import { SharedApplicationModule } from "./shared-application.module.ts";
@@ -24,7 +25,7 @@ import { EvidenceController } from "../presentation/http/evidence/evidence.contr
  */
 @Module({
   imports: [PersistenceModule, SharedApplicationModule],
-  controllers: [TasksController, EvidenceController],
+  controllers: [MockStorageController, TasksController, EvidenceController],
   providers: [CreateTaskUseCase, ListMyTasksUseCase, GetTaskUseCase, GetRetryTemplateUseCase, StartEvidenceUploadSessionUseCase, IssueUploadUrlsUseCase, CompleteEvidenceUploadUseCase, ListEvidencesUseCase],
 })
 export class TasksModule {}
