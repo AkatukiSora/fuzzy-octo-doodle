@@ -60,3 +60,22 @@ test("契約外の証拠データを拒否する", async (t) => {
 
   await assert.rejects(fetchTaskEvidences("task-1"), /証拠一覧の形式が不正/);
 });
+
+test("a filtered response keeps initial evidence without synthesizing hidden additional evidence", async (t) => {
+  t.mock.method(globalThis, "fetch", () => Promise.resolve(Response.json({ evidences: [{ ...evidence, submissionType: "initial" }] })));
+  const result = await fetchTaskEvidences("finalized-task");
+  assert.equal(result.kind, "loaded");
+  assert.deepEqual(result.evidences.map(e => e.submissionType), ["initial"]);
+});
+test("the objector or owner can display both initial and additional evidence from the API", async (t) => {
+  t.mock.method(globalThis, "fetch", () => Promise.resolve(Response.json({ evidences: [
+    { ...evidence, submissionType: "initial" }, evidence,
+  ] })));
+  const result = await fetchTaskEvidences("task-1");
+  assert.equal(result.kind, "loaded");
+  assert.deepEqual(result.evidences.map(e => e.submissionType), ["initial", "additional"]);
+});
+test("an unrelated viewer's 404 is not treated as an empty list", async (t) => {
+  t.mock.method(globalThis, "fetch", () => Promise.resolve(new Response(null, { status: 404 })));
+  assert.deepEqual(await fetchTaskEvidences("private-task"), { kind: "error", status: 404 });
+});
