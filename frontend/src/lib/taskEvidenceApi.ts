@@ -24,6 +24,7 @@ export async function fetchTaskEvidences(
   taskId: string,
   signal?: AbortSignal,
 ): Promise<TaskEvidencesResult> {
+  // API側で証拠ごとに権限を判定する。状態による制限や非公開証拠の補完はしない。
   const response = await fetch(
     `/api/tasks/${encodeURIComponent(taskId)}/evidences`,
     { credentials: "include", ...(signal ? { signal } : {}) },

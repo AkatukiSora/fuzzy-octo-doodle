@@ -338,7 +338,7 @@ export default function TaskDetailPage({
               )}
               {visibleEvidenceState.kind === "loaded" && visibleEvidenceState.evidences.length === 0 && (
                 <div className={styles["emptyEvidence"]} role="status">
-                  提出された証拠はありません。
+                  閲覧できる証拠はありません。
                 </div>
               )}
               {visibleEvidenceState.kind === "loaded" && visibleEvidenceState.evidences.length > 0 && (

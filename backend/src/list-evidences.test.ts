@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { parseTaskId, parseUserId } from "./domain/shared/id-parsers.ts";
+import type { ObjectionRepository } from "./application/ports/objection.repository.ts";
+import type { Objection } from "./domain/objection/objection.ts";
+import { parseObjectionId } from "./domain/shared/id-parsers.ts";
+import type { PhotoAccessGrant } from "./domain/task/visibility-policy.ts";
+import type { StoragePath } from "./domain/shared/storage-path.ts";
 import type { UserId } from "./domain/shared/ids.ts";
 import type { Task, TaskBase } from "./domain/task/task.ts";
 import {
@@ -11,7 +16,6 @@ import {
 } from "./domain/task/task-values.ts";
 import {
   authorizePhotoAccess,
-  viewerRole,
 } from "./domain/task/visibility-policy.ts";
 import { ListEvidencesUseCase } from "./application/usecases/evidence/list-evidences.usecase.ts";
 import type { UnitOfWork } from "./application/ports/unit-of-work.port.ts";
@@ -46,7 +50,7 @@ const base: TaskBase = {
 };
 
 function makeTask(
-  status: "active" | "reviewing" | "disputed" | "success",
+  status: Task["status"],
 ): Task {
   switch (status) {
     case "active":
@@ -72,6 +76,12 @@ function makeTask(
         additionalEvidenceDeadlineAt: now,
       };
 
+    case "failed":
+      return { ...base, status, reviewRound: 0, finalizedAt: now };
+    case "indeterminate":
+      return { ...base, status, reviewRound: 2, finalizedAt: now };
+    case "closed":
+      return { ...base, status, reviewRound: 2, finalizedAt: now };
     case "success":
       return {
         ...base,
@@ -83,69 +93,21 @@ function makeTask(
   }
 }
 
-test("本人はどのタスク状態でも写真を閲覧できる", () => {
-  const statuses: readonly ("active" | "reviewing" | "disputed" | "success")[] = [
-    "active",
-    "reviewing",
-    "disputed",
-    "success",
-  ];
-  for (const status of statuses) {
+const statuses: Task["status"][] = ["active", "reviewing", "disputed", "success", "failed", "indeterminate", "closed"];
+for (const status of statuses) {
+  test(`policy: evidence permissions in ${status}`, () => {
     const task = makeTask(status);
-    const role = viewerRole(ownerId, ownerId, false);
+    for (const submissionType of ["initial", "additional"] as const) {
+      assert.deepEqual(authorizePhotoAccess(task, "owner", submissionType), { taskId, submissionType });
+      assert.equal(authorizePhotoAccess(task, "none", submissionType), null);
+      assert.equal(authorizePhotoAccess(task, "none", submissionType, true), null);
+    }
+    assert.notEqual(authorizePhotoAccess(task, "friend", "initial"), null);
+    assert.equal(authorizePhotoAccess(task, "friend", "additional"), null);
+    assert.notEqual(authorizePhotoAccess(task, "friend", "additional", true), null);
+  });
+}
 
-    assert.equal(role, "owner");
-    assert.notEqual(authorizePhotoAccess(task, role), null);
-  }
-});
-
-test("フレンドは審査中と異議申し立て中のみ閲覧できる", () => {
-  const role = viewerRole(ownerId, friendId, true);
-
-  assert.equal(role, "friend");
-
-  assert.notEqual(
-    authorizePhotoAccess(makeTask("reviewing"), role),
-    null,
-  );
-
-  assert.notEqual(
-    authorizePhotoAccess(makeTask("disputed"), role),
-    null,
-  );
-
-  assert.equal(
-    authorizePhotoAccess(makeTask("active"), role),
-    null,
-  );
-
-  assert.equal(
-    authorizePhotoAccess(makeTask("success"), role),
-    null,
-  );
-});
-
-test("第三者には写真の閲覧権限が与えられない", () => {
-  const role = viewerRole(ownerId, strangerId, false);
-
-  assert.equal(role, "none");
-
-  assert.equal(
-    authorizePhotoAccess(makeTask("reviewing"), role),
-    null,
-  );
-});
-
-test("閲覧許可には対象タスクIDが含まれる", () => {
-  const grant = authorizePhotoAccess(
-    makeTask("reviewing"),
-    "owner",
-  );
-
-  assert.deepEqual(grant, { taskId });
-});
-// テスト用トランザクション。
-// 実際のDBには接続しないため、中身は使用しない。
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const tx = {} as Tx;
 
@@ -182,8 +144,9 @@ class FakeTasks implements TaskRepository {
 }
 
 class FakeEvidences implements EvidenceRepository {
+  constructor(private readonly items: Evidence[]) {}
   listByTask(): Promise<Evidence[]> {
-    return Promise.resolve([evidence]);
+    return Promise.resolve(this.items);
   }
 
   insert(): never { throw new Error("未使用"); }
@@ -213,7 +176,10 @@ class FakeFriendships implements FriendshipRepository {
 class FakeStorage implements ObjectStorage {
   signedUrlCount = 0;
 
-  createSignedReadUrl(): Promise<string> {
+  readonly signed: { grant: PhotoAccessGrant; path: StoragePath }[] = [];
+
+  createSignedReadUrl(grant: PhotoAccessGrant, path: StoragePath): Promise<string> {
+    this.signed.push({ grant, path });
     this.signedUrlCount++;
     return Promise.resolve("https://example.com/signed-photo");
   }
@@ -222,106 +188,79 @@ class FakeStorage implements ObjectStorage {
   exists(): never { throw new Error("未使用"); }
 }
 
-function createTestUseCase(task: Task | null, isFriend: boolean) {
+class FakeObjections implements ObjectionRepository {
+  readonly rounds: number[] = [];
+  constructor(private readonly objectorId: UserId | null) {}
+  findByTaskAndRound(_tx: Tx, id: typeof taskId, round: 1 | 2): Promise<Objection | null> {
+    assert.equal(id, taskId);
+    this.rounds.push(round);
+    return Promise.resolve(this.objectorId === null ? null : {
+      id: parseObjectionId("66666666-6666-4666-8666-666666666666"),
+      taskId, objectorId: this.objectorId, reviewRound: 1,
+      reasonType: "other", reasonDetail: "test", createdAt: now, withdrawnAt: null,
+    });
+  }
+  tryInsert(): never { throw new Error("unused"); }
+  findById(): never { throw new Error("unused"); }
+  save(): never { throw new Error("unused"); }
+  listByObjector(): never { throw new Error("unused"); }
+}
+
+function createTestUseCase(task: Task | null, isFriend: boolean, items: Evidence[] = [evidence], objectorId: UserId | null = null) {
   const storage = new FakeStorage();
   const friendships = new FakeFriendships(isFriend);
 
+  const objections = new FakeObjections(objectorId);
   const useCase = new ListEvidencesUseCase(
     testUow,
     new FakeTasks(task),
-    new FakeEvidences(),
+    new FakeEvidences(items),
     friendships,
     storage,
+    objections,
   );
 
-  return { useCase, storage, friendships };
+  return { useCase, storage, friendships, objections };
 }
 
-test("UseCase: 本人は証拠写真のURLを取得できる", async () => {
-  const { useCase, storage } = createTestUseCase(
-    makeTask("reviewing"),
-    false,
-  );
 
-  const result = await useCase.execute({
-    viewerId: ownerId,
-    taskId,
-  });
-
-  assert.equal(result.evidences.length, 1);
-  assert.deepEqual(result.evidences[0]?.photoUrls, [
-    "https://example.com/signed-photo",
-  ]);
-  assert.equal(storage.signedUrlCount, 1);
-});
-
-test("UseCase: フレンドは審査中の証拠写真URLを取得できる", async () => {
-  const { useCase, storage, friendships } = createTestUseCase(
-    makeTask("reviewing"),
-    true,
-  );
-
-  const result = await useCase.execute({ viewerId: friendId, taskId });
-
-  assert.equal(result.evidences.length, 1);
-  assert.deepEqual(result.evidences[0]?.photoUrls, [
-    "https://example.com/signed-photo",
-  ]);
-  assert.equal(storage.signedUrlCount, 1);
-  assert.deepEqual(friendships.calls, [{ ownerId, viewerId: friendId }]);
-});
-
-test("UseCase: フレンドは異議申し立て中の証拠写真URLを取得できる", async () => {
-  const { useCase, storage, friendships } = createTestUseCase(
-    makeTask("disputed"),
-    true,
-  );
-
-  const result = await useCase.execute({ viewerId: friendId, taskId });
-
-  assert.equal(result.evidences.length, 1);
-  assert.deepEqual(result.evidences[0]?.photoUrls, [
-    "https://example.com/signed-photo",
-  ]);
-  assert.equal(storage.signedUrlCount, 1);
-  assert.deepEqual(friendships.calls, [{ ownerId, viewerId: friendId }]);
-});
-
-test("UseCase: 第三者にはURLを発行しない", async () => {
-  const { useCase, storage } = createTestUseCase(
-    makeTask("reviewing"),
-    false,
-  );
-
-  await assert.rejects(
-    useCase.execute({ viewerId: strangerId, taskId }),
-    { code: "NOT_FOUND" },
-  );
-
+const additional: Evidence = { ...evidence, submissionType: "additional", photos: [parseStoragePath("tasks/test/additional.jpg")] };
+for (const status of statuses) {
+  for (const viewer of ["owner", "objector", "friend", "stranger"] as const) {
+    test(`UseCase: ${status} / ${viewer} filters before signing`, async () => {
+      const viewerId = viewer === "owner" ? ownerId : viewer === "stranger" ? strangerId : friendId;
+      const { useCase, storage, objections } = createTestUseCase(
+        makeTask(status), viewer === "friend" || viewer === "objector", [evidence, additional],
+        viewer === "objector" ? friendId : strangerId,
+      );
+      if (viewer === "stranger") {
+        await assert.rejects(useCase.execute({ viewerId, taskId }), { code: "NOT_FOUND" });
+        assert.equal(storage.signedUrlCount, 0);
+        return;
+      }
+      const result = await useCase.execute({ viewerId, taskId });
+      const types = viewer === "friend" ? ["initial"] : ["initial", "additional"];
+      assert.deepEqual(result.evidences.map(e => e.submissionType), types);
+      assert.deepEqual(storage.signed.map(({ grant }) => grant.submissionType), types);
+      assert.equal(storage.signedUrlCount, types.length);
+      if (viewer !== "owner") assert.deepEqual(objections.rounds, [1]);
+      if (viewer === "friend") assert.ok(storage.signed.every(({ path }) => path !== additional.photos[0]));
+    });
+  }
+}
+test("UseCase: missing objection denies additional evidence and issues no URL", async () => {
+  const { useCase, storage } = createTestUseCase(makeTask("reviewing"), true, [additional]);
+  assert.deepEqual(await useCase.execute({ viewerId: friendId, taskId }), { evidences: [] });
   assert.equal(storage.signedUrlCount, 0);
 });
 
-test("UseCase: フレンドでも閲覧不可の状態ではURLを発行しない", async () => {
-  const { useCase, storage } = createTestUseCase(
-    makeTask("success"),
-    true,
-  );
-
-  await assert.rejects(
-    useCase.execute({ viewerId: friendId, taskId }),
-    { code: "FORBIDDEN" },
-  );
-
-  assert.equal(storage.signedUrlCount, 0);
-});
-
-test("UseCase: 存在しないタスクはNOT_FOUND", async () => {
+test("UseCase: missing task returns NOT_FOUND without signing", async () => {
   const { useCase, storage } = createTestUseCase(null, false);
-
-  await assert.rejects(
-    useCase.execute({ viewerId: ownerId, taskId }),
-    { code: "NOT_FOUND" },
-  );
-
+  await assert.rejects(useCase.execute({ viewerId: ownerId, taskId }), { code: "NOT_FOUND" });
+  assert.equal(storage.signedUrlCount, 0);
+});
+test("UseCase: empty evidence stays empty", async () => {
+  const { useCase, storage } = createTestUseCase(makeTask("success"), true, []);
+  assert.deepEqual(await useCase.execute({ viewerId: friendId, taskId }), { evidences: [] });
   assert.equal(storage.signedUrlCount, 0);
 });
