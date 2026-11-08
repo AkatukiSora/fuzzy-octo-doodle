@@ -42,7 +42,6 @@
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 700;
-  margin-left: 0.2rem;
 }
 
 .userName {
@@ -79,8 +78,6 @@
 .status {
   padding: 5px 10px;
   border-radius: 8px;
-  background: var(--color-primary-light);
-  color: var(--color-primary);
   font-size: 12px;
   font-weight: 600;
 }
@@ -95,13 +92,13 @@
 }
 
 .footer {
-  padding-top: 1px;
+  padding-top: 12px;
   border-top: 1px solid var(--color-border);
   gap: 8px;
 }
 
 .reactions {
-  gap: 12px;
+  gap: 4px;
   flex-wrap: wrap;
   font-size: 13px;
   color: var(--color-text-secondary);
@@ -141,4 +138,36 @@
 
 .reactionButton:disabled {
   cursor: default;
+}
+
+.menu {
+  margin-right: -8px;
+}
+
+.userInfo {
+  min-width: 0;
+}
+
+.userName, .time {
+  overflow-wrap: anywhere;
+}
+
+.reactionButton {
+  min-height: 32px;
+}
+
+.status[data-status="success"] {
+  color: #147a4c;
+}
+
+.status[data-status="reviewing"] {
+  color: #2465b8;
+}
+
+.status[data-status="disputed"] {
+  color: #a34b08;
+}
+
+.status[data-status="failed"] {
+  color: #b32e2e;
 }

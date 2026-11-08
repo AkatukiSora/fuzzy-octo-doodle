@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
 import { TaskStatusBadge } from "../../../../components/tasks/TaskStatusBadge";
@@ -142,6 +143,7 @@ export default function TaskDetailPage({
   params: Promise<{ taskId: string }>;
 }) {
   const { taskId } = use(params);
+  const isHomeDetail = usePathname().startsWith("/home/tasks/");
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<TaskLoadError | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -242,7 +244,7 @@ export default function TaskDetailPage({
   return (
     <AppLayout showHeader={false}>
       <div className={styles["screen"]}>
-        <PageHeader title="タスク詳細" backHref="/tasks" />
+        <PageHeader title="タスク詳細" backHref={isHomeDetail ? "/" : "/tasks"} />
 
         {!task && !error ? (
           <Loading message="タスク詳細を読み込んでいます..." />

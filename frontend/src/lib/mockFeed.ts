@@ -10,6 +10,7 @@ export const mockPosts: FeedPost[] = [
     timeAgo: "2時間前",
     taskTitle: "毎朝30分散歩する",
     status: "達成！",
+    statusKey: "success",
     reactions: [
       { type: "support", emoji: "👏", count: 3 },
       { type: "fire", emoji: "🔥", count: 1 },
@@ -24,6 +25,7 @@ export const mockPosts: FeedPost[] = [
     timeAgo: "昨日",
     taskTitle: "毎日英単語を20個覚える",
     status: "進行中",
+    statusKey: "active",
     deadlineAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     reactions: [
       { type: "support", emoji: "👏", count: 0 },
@@ -39,6 +41,7 @@ export const mockPosts: FeedPost[] = [
     timeAgo: "3時間前",
     taskTitle: "週に3回、筋トレする",
     status: "審査中",
+    statusKey: "reviewing",
     reviewEndsAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
     reactions: [
       { type: "support", emoji: "👏", count: 0 },
@@ -54,6 +57,7 @@ export const mockPosts: FeedPost[] = [
     timeAgo: "5時間前",
     taskTitle: "寝る前に本を読む",
     status: "達成！",
+    statusKey: "success",
     reactions: [
       { type: "support", emoji: "👏", count: 0 },
       { type: "fire", emoji: "🔥", count: 0 },

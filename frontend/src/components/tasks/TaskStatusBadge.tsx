@@ -7,7 +7,7 @@ interface TaskStatusBadgeProps {
   status: TaskStatus;
 }
 
-const statusConfig = {
+export const statusConfig = {
   active: {
     label: "挑戦中",
     variant: "primary",

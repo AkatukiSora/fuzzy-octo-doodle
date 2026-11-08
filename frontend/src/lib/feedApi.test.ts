@@ -106,3 +106,13 @@ test("投稿時刻を相対表示し、審査期限のない投稿に期限を�
   assert.equal(post.deadlineAt, undefined);
   assert.equal(post.reviewEndsAt, undefined);
 });
+
+test("all implemented task statuses retain their typed key for badge colors", () => {
+  const statuses = ["active", "reviewing", "disputed", "success", "failed", "indeterminate", "closed"] as const;
+  for (const status of statuses) {
+    const post = parseFeedResponse({ items: [{ ...item, task: { ...item.task, status } }], nextCursor: null }).items[0];
+    assert.ok(post);
+    assert.equal(post.statusKey, status);
+    assert.ok(post.status);
+  }
+});
