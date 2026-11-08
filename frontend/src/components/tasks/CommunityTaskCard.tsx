@@ -2,6 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { TaskStatus } from "../../types/task";
+import { Badge } from "../ui/Badge";
+import { statusConfig } from "./TaskStatusBadge";
 import { Card } from "../ui/Card";
 import { ReportMenu } from "../ui/ReportMenu";
 import type { ReactionType } from "../../types/feed";
@@ -21,6 +24,8 @@ interface CommunityTaskCardProps {
   activityLabel?: string;
   taskTitle: string;
   status: string;
+  statusKey: TaskStatus;
+  reactionPending?: boolean;
   deadlineAt?: string;
   reviewEndsAt?: string;
   reactions: Reaction[];
@@ -36,6 +41,8 @@ export function CommunityTaskCard({
   activityLabel = "タスクを作成しました",
   taskTitle,
   status,
+  statusKey,
+  reactionPending = false,
   deadlineAt,
   reviewEndsAt,
   reactions,
@@ -108,9 +115,11 @@ export function CommunityTaskCard({
           </div>
 
           {/* 投稿メニュー */}
-          <ReportMenu
-            {...(onReport !== undefined ? { onReport } : {})}
-          />
+          <div className={styles["menu"]}>
+            <ReportMenu
+              {...(onReport !== undefined ? { onReport } : {})}
+            />
+          </div>
         </div>
 
         {/* タスク名 */}
@@ -120,9 +129,9 @@ export function CommunityTaskCard({
 
         {/* ステータス・残り時間 */}
         <div className={styles["statusRow"]}>
-          <span className={styles["status"]}>
+          <Badge data-status={statusKey} variant={statusConfig[statusKey].variant} className={styles["status"]}>
             {status}
-          </span>
+          </Badge>
 
           {timeLabel !== null && (
             <span className={styles["remaining"]}>
@@ -147,7 +156,7 @@ export function CommunityTaskCard({
                 onClick={() => {
                   onReactionClick?.(reaction.type, reaction.reacted ?? false);
                 }}
-                disabled={!onReactionClick}
+                disabled={!onReactionClick || reactionPending}
                 aria-pressed={reaction.reacted ?? false}
                 aria-label={`${reaction.emoji} リアクション ${String(reaction.count)}件`}
               >

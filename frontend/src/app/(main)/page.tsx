@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { CommunityTaskCard } from "../../components/tasks/CommunityTaskCard";
@@ -9,6 +9,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorState } from "../../components/ui/ErrorState";
 import { Loading } from "../../components/ui/Loading";
 import type { FeedFilter, FeedPost, ReactionType } from "../../types/feed";
+import { updateReactions } from "../../lib/feedReactions";
 import { fetchFeed, sendReaction } from "../../lib/feedApi";
 
 export default function HomePage() {
@@ -20,12 +21,16 @@ export default function HomePage() {
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
+  const pendingReactions = useRef(new Set<string>());
+  const feedGeneration = useRef(0);
+
   const retry = useCallback(() => {
     setRetryKey((current) => current + 1);
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+    feedGeneration.current += 1;
 
     async function loadFeed() {
       setIsLoading(true);
@@ -62,7 +67,14 @@ export default function HomePage() {
     reactionType: ReactionType,
     reacted: boolean,
   ) {
-    if (reactingPostIds.has(postId)) return;
+    if (pendingReactions.current.has(postId)) return;
+    const original = posts.find((post) => post.id === postId);
+    if (!original) return;
+    const generation = feedGeneration.current;
+    pendingReactions.current.add(postId);
+    setPosts((current) => current.map((post) => post.id === postId
+      ? { ...post, reactions: updateReactions(post.reactions, reactionType, reacted) }
+      : post));
 
     setReactingPostIds((current) => new Set(current).add(postId));
     setReactionError(null);
@@ -70,12 +82,16 @@ export default function HomePage() {
     try {
       await sendReaction(postId, reactionType, reacted);
 
-      retry();
+      // Keep the optimistic state; the API returns 204.
     } catch {
+      if (generation !== feedGeneration.current) return;
+      setPosts((current) => current.map((post) => post.id === postId
+        ? { ...post, reactions: original.reactions } : post));
       setReactionError(
         "リアクションを送信できませんでした。もう一度お試しください。",
       );
     } finally {
+      pendingReactions.current.delete(postId);
       setReactingPostIds((current) => {
         const next = new Set(current);
         next.delete(postId);
@@ -114,9 +130,11 @@ export default function HomePage() {
             {...(post.activityLabel !== undefined ? { activityLabel: post.activityLabel } : {})}
             taskTitle={post.taskTitle}
             status={post.status}
+            statusKey={post.statusKey}
+            reactionPending={reactingPostIds.has(post.id)}
             reactions={post.reactions}
             onDetailClick={() => {
-              router.push(`/tasks/${encodeURIComponent(post.taskId)}`);
+              router.push(`/home/tasks/${encodeURIComponent(post.taskId)}`);
             }}
             onReactionClick={(reactionType, reacted) => {
               void handleReaction(post.id, reactionType, reacted);

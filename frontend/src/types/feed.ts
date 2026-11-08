@@ -1,3 +1,5 @@
+import type { TaskStatus } from "./task";
+
 export type FeedFilter = "all" | "objected";
 
 export type ReactionType = "support" | "fire" | "congrats" | "laugh";
@@ -19,6 +21,7 @@ export interface FeedPost {
   activityLabel?: string;
   taskTitle: string;
   status: string;
+  statusKey: TaskStatus;
   deadlineAt?: string;
   reviewEndsAt?: string;
   reactions: FeedReaction[];

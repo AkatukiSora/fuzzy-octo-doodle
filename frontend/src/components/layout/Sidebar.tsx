@@ -70,7 +70,7 @@ export function Sidebar() {
         {items.map((item) => {
           const active =
             item.href === "/"
-              ? pathname === "/"
+              ? pathname === "/" || pathname.startsWith("/home/tasks/")
               : item.href === "/tasks"
                 ? pathname === "/tasks" ||
                   (pathname.startsWith("/tasks/") &&

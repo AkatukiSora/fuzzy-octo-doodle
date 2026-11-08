@@ -67,7 +67,7 @@ export function BottomNavigation() {
       {items.map((item) => {
         const active =
           item.href === "/"
-            ? pathname === "/"
+            ? pathname === "/" || pathname.startsWith("/home/tasks/")
             : pathname === item.href ||
               (item.href !== "/tasks" &&
                 pathname.startsWith(`${item.href}/`)) ||

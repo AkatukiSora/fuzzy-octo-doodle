@@ -61,6 +61,7 @@ export function parseFeedResponse(value: unknown, now = Date.now()): FeedRespons
         activityLabel: activityLabels[item.postType],
         taskTitle: item.task.title,
         status: statusLabels[item.task.status],
+        statusKey: item.task.status,
         // FeedItemView は審査期限を返さない。元の達成期限を審査期限に流用しない。
         ...(item.task.status === "active" ? { deadlineAt: item.task.deadlineAt } : {}),
         reactions: reactionDefinitions.map(({ type, emoji }) => ({
