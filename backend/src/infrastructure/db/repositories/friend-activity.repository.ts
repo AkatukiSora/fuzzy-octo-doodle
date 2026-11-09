@@ -9,13 +9,16 @@ import { rowToTask } from "../mappers/task.mapper.ts";
 
 const due = sql<Date>`CASE WHEN status = 'reviewing' THEN review_deadline_at WHEN status = 'disputed' THEN additional_evidence_deadline_at ELSE deadline_at END`;
 
+/** 審査は期限ちょうどで終了、証拠提出は期限ちょうどまで許可する既存ドメインと揃える。 */
+const ongoing = (now: Date) => sql<boolean>`((status = 'active' AND deadline_at >= ${now}) OR (status = 'reviewing' AND review_deadline_at > ${now}) OR (status = 'disputed' AND additional_evidence_deadline_at >= ${now}))`;
+
 export class KyselyFriendActivityRepository implements FriendActivityRepository {
   async counts(tx: Tx, owner: UserId, now: Date): Promise<FriendActivityCounts> {
     const row = await dbOf(tx).selectFrom("tasks").where("user_id", "=", owner).select([
       sql<number>`coalesce(sum(case when status = 'success' then 1 else 0 end),0)`.as("success"),
       sql<number>`coalesce(sum(case when status = 'failed' then 1 else 0 end),0)`.as("failed"),
       sql<number>`coalesce(sum(case when status = 'indeterminate' then 1 else 0 end),0)`.as("indeterminate"),
-      sql<number>`coalesce(sum(case when status = 'reviewing' or (status = 'active' and deadline_at >= ${now}) or (status = 'disputed' and additional_evidence_deadline_at >= ${now}) then 1 else 0 end),0)`.as("active"),
+      sql<number>`coalesce(sum(case when ${ongoing(now)} then 1 else 0 end),0)`.as("active"),
       sql<number>`coalesce(sum(case when status = 'failed' or (status = 'active' and deadline_at < ${now}) or (status = 'disputed' and additional_evidence_deadline_at < ${now}) then 1 else 0 end),0)`.as("overdue"),
     ]).executeTakeFirstOrThrow();
     return { successCount: toNumber(row.success), failedCount: toNumber(row.failed), indeterminateCount: toNumber(row.indeterminate), activeCount: toNumber(row.active), overdueCount: toNumber(row.overdue) };
@@ -25,7 +28,7 @@ export class KyselyFriendActivityRepository implements FriendActivityRepository 
     let q = dbOf(tx).selectFrom("tasks").selectAll()
       .select(due.as("due_at"))
       .select(sql<string>`to_char(${due} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`.as("cursor_at"))
-      .where("user_id", "=", query.owner).where("status", "in", ["active", "reviewing", "disputed"]);
+      .where("user_id", "=", query.owner).where(ongoing(query.now));
     const ascending = query.sort === "soonest";
     if (query.cursor !== undefined) {
       const cursor = decodeCursor(query.cursor);

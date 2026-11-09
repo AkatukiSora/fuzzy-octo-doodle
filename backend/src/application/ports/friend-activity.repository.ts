@@ -8,6 +8,7 @@ export interface FriendActivityQuery {
   owner: UserId;
   sort: "soonest" | "latest";
   limit: number;
+  now: Date;
   cursor?: string;
 }
 export interface FriendActivityCounts extends UserStats {

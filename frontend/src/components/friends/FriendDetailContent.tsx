@@ -10,7 +10,7 @@ import { FriendActivityList } from "./FriendActivityList";
 import { ErrorState } from "../ui/ErrorState";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
-import { fetchFriendActivity, FriendDetailError, isUserBlocked, reportFriend, setUserBlocked, type FriendActivity, type ReportBody, type ReportReason, type TaskSort } from "../../lib/friendDetailApi";
+import { fetchFriendActivity, FriendDetailError, isFriendTaskOngoing, isTaskOverdue, isUserBlocked, reportFriend, setUserBlocked, type FriendActivity, type ReportBody, type ReportReason, type TaskSort } from "../../lib/friendDetailApi";
 import styles from "./FriendDetailContent.module.css";
 
 export function FriendDetailContent({ friendId }: { friendId: string }) {
@@ -32,6 +32,13 @@ export function FriendDetailContent({ friendId }: { friendId: string }) {
   const requestKey = useRef<{ body: string; key: string } | null>(null);
   const menu = useRef<HTMLDetailsElement>(null);
   const generation = useRef(0);
+  const [now, setNow] = useState(Date.now);
+
+  useEffect(() => {
+    const clock = window.setInterval(() => { setNow(Date.now()); }, 1000);
+    const refresh = window.setInterval(() => { if (!lock.current) setRevision(value => value + 1); }, 60_000);
+    return () => { window.clearInterval(clock); window.clearInterval(refresh); };
+  }, []);
 
   useEffect(() => {
     const refresh = () => { if (!lock.current) setRevision(value => value + 1); };
@@ -69,7 +76,7 @@ export function FriendDetailContent({ friendId }: { friendId: string }) {
     try {
       const next = await fetchFriendActivity(friendId, sort, undefined, data.tasks.nextCursor);
       if (version !== generation.current) return;
-      setData(current => current ? { ...next, tasks: { ...next.tasks, items: [...current.tasks.items, ...next.tasks.items.filter(task => !current.tasks.items.some(old => old.id === task.id))] } } : null);
+      setData(current => current ? { ...next, tasks: { ...next.tasks, items: [...current.tasks.items.filter(task => isFriendTaskOngoing(task, Date.now())), ...next.tasks.items.filter(task => !current.tasks.items.some(old => old.id === task.id))] } } : null);
     } catch (cause) {
       if (version !== generation.current) return;
       if (cause instanceof FriendDetailError && cause.status === 404) { setData(null); setRevision(value => value + 1); }
@@ -108,6 +115,9 @@ export function FriendDetailContent({ friendId }: { friendId: string }) {
     finally { lock.current = false; setBusy(false); }
   }
 
+  const expiredSinceLoad = data?.tasks.items.filter(task => !isFriendTaskOngoing(task, now)) ?? [];
+  const liveTasks = data?.tasks.items.filter(task => isFriendTaskOngoing(task, now)) ?? [];
+
   return (
     <AppLayout showHeader={false}>
       <div className={styles["screen"]}>
@@ -129,10 +139,10 @@ export function FriendDetailContent({ friendId }: { friendId: string }) {
           ) : data ? (
             <>
               <FriendProfile name={data.friend.nickname} />
-              <TaskStatsCard completionRate={data.stats.successRate} completedCount={0} activeCount={data.stats.activeCount} overdueCount={data.stats.overdueCount} />
+              <TaskStatsCard completionRate={data.stats.successRate} completedCount={0} activeCount={Math.max(0, data.stats.activeCount - expiredSinceLoad.length)} overdueCount={data.stats.overdueCount + expiredSinceLoad.filter(task => isTaskOverdue(task, now)).length} />
               <p className={styles["explanation"]}>達成率は達成・未達成の確定済みタスクから計算しています。判定不能は含みません。</p>
               {error && <p role="alert" className={styles["error"]}>{error}</p>}
-              <FriendActivityList tasks={data.tasks.items} sort={sort} onSort={setSort} nextCursor={data.tasks.nextCursor} onMore={() => { void more(); }} loadingMore={loadingMore} />
+              <FriendActivityList tasks={liveTasks} now={now} sort={sort} onSort={setSort} nextCursor={data.tasks.nextCursor} onMore={() => { void more(); }} loadingMore={loadingMore} />
             </>
           ) : <ErrorState description={error} onRetry={() => { setRevision(value => value + 1); }} />}
         </div>

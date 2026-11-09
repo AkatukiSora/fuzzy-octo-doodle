@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { TaskCard } from "../tasks/TaskCard";
 import { Button } from "../ui/Button";
 import { isTaskOverdue, type FriendActivityTask, type TaskSort } from "../../lib/friendDetailApi";
@@ -14,13 +13,9 @@ interface Props {
   nextCursor: string | null;
   onMore: () => void;
   loadingMore: boolean;
+  now: number;
 }
-export function FriendActivityList({ tasks, sort, onSort, nextCursor, onMore, loadingMore }: Props) {
-  const [now, setNow] = useState(Date.now);
-  useEffect(() => {
-    const timer = window.setInterval(() => { setNow(Date.now()); }, 1000);
-    return () => { window.clearInterval(timer); };
-  }, []);
+export function FriendActivityList({ tasks, now, sort, onSort, nextCursor, onMore, loadingMore }: Props) {
   return (
     <section aria-labelledby="friend-tasks-heading">
       <div className={styles["listHeading"]}>
@@ -35,7 +30,7 @@ export function FriendActivityList({ tasks, sort, onSort, nextCursor, onMore, lo
         <ul className={styles["taskList"]}>
           {tasks.map(task => {
             const overdue = isTaskOverdue(task, now);
-            const remaining = task.status === "reviewing" && Date.parse(task.dueAt) <= now ? "審査結果の反映待ち" : taskRemainingText(task.dueAt, task.status, now);
+            const remaining = Date.parse(task.dueAt) === now ? "残り1分未満" : taskRemainingText(task.dueAt, task.status, now);
             const label = task.status === "reviewing" ? "審査期限" : task.status === "disputed" ? "追加提出期限" : "期限";
             return <li key={task.id} className={overdue ? styles["overdue"] : undefined}>
               <TaskCard href={`/tasks/${task.id}`} title={task.title} description={task.achievementCondition || "達成条件の指定なし"} deadline={`${label}：${new Date(task.dueAt).toLocaleString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}`} status={task.status} remainingText={remaining} />

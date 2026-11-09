@@ -20,7 +20,7 @@ Cloudflare Tunnel ─┬─ /api → backend  (8080) ── database (CloudNativ
 | `frontend.yaml` | frontend の Deployment と Service |
 | `ingress.yaml` | `donee.sora-lab.dev` の公開設定(`/api` と `/`) |
 | `networkpolicy.yaml` | 層ごとの許可する入口 |
-| `jobs/` | 定期ジョブ(未展開) |
+| `jobs/` | 期限切れ・審査終了の定期ジョブ |
 | `kustomization.yaml` | リソース一覧とイメージのタグ |
 | `../docs/object-storage.md` | S3互換ストレージ、Secret同期、権限、CORSの設定 |
 
@@ -50,7 +50,9 @@ backend は既定で `OBJECT_STORAGE_DRIVER=mock` のまま起動する。S3へ�
 
 ## 定期ジョブ
 
-`jobs/` に、backend のイメージで動く 4 つの CronJob(`backend/src/jobs-main.ts` のジョブ)を置いている。ジョブの整備が済むまで展開しない。`kustomization.yaml` の `resources` に `jobs` を追加すると展開される。実行間隔は暫定値(5 分ごと)。
+`jobs/` の4つのCronJobを `kustomization.yaml` の `resources` から展開する。初回提出期限切れ、審査終了、追加提出期限切れ、アップロードセッション期限切れを5分ごとに処理する。APIと同じbackendイメージを使用し、マイグレーション後のwave 3で反映する。各CronJobは `concurrencyPolicy: Forbid` で重複実行を防ぐ。
+
+期限切れからジョブ実行までの時間差はあるため、フレンドの進行中一覧・件数はDBのstatusだけでなく現在の適用期限でも絞る。期限内に開始したアップロードの猶予中はドメインの判定を尊重し、DB状態を強制的に未達成にしない。
 
 ## NetworkPolicy
 

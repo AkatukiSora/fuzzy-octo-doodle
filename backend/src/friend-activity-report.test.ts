@@ -54,7 +54,7 @@ test("activity preserves private task content but hides amount and uses existing
   assert.equal(result.tasks.items[0]?.title, "金額は非公開");
   assert.equal(Object.hasOwn(result.tasks.items[0], "penaltyAmount"), false);
   assert.equal(result.tasks.nextCursor, "next");
-  assert.deepEqual(list.mock.calls[0]?.arguments[1], { owner: target, sort: "latest", limit: 2, cursor: "cursor" });
+  assert.deepEqual(list.mock.calls[0]?.arguments[1], { owner: target, sort: "latest", limit: 2, cursor: "cursor", now });
 });
 
 test("report retries return a single receipt and a changed payload with the same key is rejected", async t => {

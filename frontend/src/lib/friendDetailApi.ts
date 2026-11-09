@@ -51,3 +51,11 @@ export async function reportFriend(id: string, body: ReportBody, key: string): P
 export function isTaskOverdue(task: FriendActivityTask, now: number): boolean {
   return task.status === "failed" || ((task.status === "active" || task.status === "disputed") && Date.parse(task.dueAt) < now);
 }
+
+/** サーバーの進行中抽出と同じ期限境界を使い、表示中に期限を跨いだ項目も除外する。 */
+export function isFriendTaskOngoing(task: FriendActivityTask, now: number): boolean {
+  const deadline = Date.parse(task.dueAt);
+  if (!Number.isFinite(deadline)) return false;
+  if (task.status === "reviewing") return deadline > now;
+  return (task.status === "active" || task.status === "disputed") && deadline >= now;
+}

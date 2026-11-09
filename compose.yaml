@@ -97,6 +97,34 @@ services:
         - action: rebuild
           path: ./pnpm-workspace.yaml
 
+  # APIとは別プロセスで期限切れ・審査終了を更新する。各巡回は完了後に待機するため重複しない。
+  jobs:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      OBJECT_STORAGE_DRIVER: mock
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: app
+      DATABASE_USER: app
+      DATABASE_PASSWORD: app
+      JOB_INTERVAL_SECONDS: "60"
+    command: ["pnpm", "exec", "tsx", "src/jobs-main.ts", "all"]
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./backend/src
+          target: /repo/backend/src
+        - action: rebuild
+          path: ./backend/package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
   # Next.js の開発サーバー。ブラウザからは proxy 経由でアクセスする。
   frontend:
     build:

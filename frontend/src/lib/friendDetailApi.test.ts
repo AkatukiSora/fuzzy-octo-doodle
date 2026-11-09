@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activitySchema, fetchFriendActivity, isTaskOverdue, reportFriend, setUserBlocked, type FriendActivityTask } from "./friendDetailApi.ts";
+import { activitySchema, fetchFriendActivity, isFriendTaskOngoing, isTaskOverdue, reportFriend, setUserBlocked, type FriendActivityTask } from "./friendDetailApi.ts";
 
 const task: FriendActivityTask = { id: "11111111-1111-4111-8111-111111111111", title: "金額非公開", achievementCondition: "写真", deadlineAt: "2026-11-09T00:00:00Z", dueAt: "2026-11-10T00:00:00Z", status: "active", viewer: "friend", isPenaltyPublic: false };
 const data = { friend: { userId: task.id, nickname: "フレンド" }, stats: { successRate: null, activeCount: 1, overdueCount: 0 }, tasks: { items: [task], nextCursor: "next/cursor" } };
@@ -26,6 +26,19 @@ test("overdue uses submission deadline, not the original deadline of submitted t
   assert.equal(isTaskOverdue({ ...task, status: "reviewing", dueAt: task.deadlineAt }, now), false);
   assert.equal(isTaskOverdue({ ...task, status: "disputed", dueAt: task.deadlineAt }, now), true);
   assert.equal(isTaskOverdue({ ...task, status: "failed" }, now), true);
+});
+
+test("ongoing tasks disappear at their applicable deadline without waiting for a job or reload", () => {
+  const deadline = Date.parse(task.dueAt);
+  for (const status of ["active", "disputed"] as const) {
+    assert.equal(isFriendTaskOngoing({ ...task, status }, deadline - 1), true);
+    assert.equal(isFriendTaskOngoing({ ...task, status }, deadline), true);
+    assert.equal(isFriendTaskOngoing({ ...task, status }, deadline + 1), false);
+  }
+  assert.equal(isFriendTaskOngoing({ ...task, status: "reviewing" }, deadline - 1), true);
+  assert.equal(isFriendTaskOngoing({ ...task, status: "reviewing" }, deadline), false);
+  assert.equal(isFriendTaskOngoing({ ...task, status: "failed" }, deadline - 1), false);
+  assert.equal(isFriendTaskOngoing({ ...task, dueAt: "invalid" }, deadline), false);
 });
 
 test("report keeps the retry key and block/unblock use existing endpoints", async t => {

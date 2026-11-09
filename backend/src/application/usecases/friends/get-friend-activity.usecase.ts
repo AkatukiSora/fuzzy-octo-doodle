@@ -32,9 +32,10 @@ export class GetFriendActivityUseCase {
       }
       const user = await this.users.findById(tx, input.friendUserId);
       if (user === null) throw new DomainError("NOT_FOUND", "フレンドが見つかりません");
-      const counts = await this.activity.counts(tx, input.friendUserId, this.clock.now());
+      const now = this.clock.now();
+      const counts = await this.activity.counts(tx, input.friendUserId, now);
       const page = await this.activity.list(tx, {
-        owner: input.friendUserId, sort: input.sort, limit: input.limit,
+        owner: input.friendUserId, sort: input.sort, limit: input.limit, now,
         ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
       });
       return {
