@@ -117,36 +117,49 @@ export default function ConfirmTaskPage() {
           </p>
         ) : draft ? (
           <div className={styles["confirmationCard"]}>
-            <dl className={styles["details"]}>
-              <div className={styles["detail"]}>
-                <dt>タスク名</dt>
-                <dd>{draft.title}</dd>
-              </div>
-              <div className={styles["detail"]}>
-                <dt>達成条件</dt>
-                <dd>{draft.description || "未入力"}</dd>
-              </div>
-              <div className={styles["detail"]}>
-                <dt>期限</dt>
-                <dd>{formatDeadline(draft.deadline)}</dd>
-              </div>
-              <div className={styles["detail"]}>
-                <dt>証拠提出方法</dt>
-                <dd>写真で判定</dd>
-              </div>
-              <div className={styles["detail"]}>
-                <dt>金額設定</dt>
-                <dd>{draft.reward}円</dd>
-              </div>
-              <div className={styles["detail"]}>
-                <dt>金額の公開設定</dt>
-                <dd>
-                  {draft.visibility === "private"
-                    ? "公開しない（自分のみに表示）"
-                    : "公開する（招待したフレンドに表示）"}
-                </dd>
-              </div>
-            </dl>
+            <section className={styles["summaryGroup"]} aria-labelledby="task-summary-heading">
+              <h2 id="task-summary-heading" className={styles["groupTitle"]}>タスク内容</h2>
+              <dl className={styles["details"]}>
+                <div className={[styles["detail"], styles["taskTitle"]].join(" ")}>
+                  <dt>タスク名</dt>
+                  <dd>{draft.title}</dd>
+                </div>
+                <div className={styles["detail"]}>
+                  <dt>達成条件</dt>
+                  <dd>{draft.description || "未入力"}</dd>
+                </div>
+              </dl>
+            </section>
+            <section className={styles["detailGroup"]} aria-labelledby="task-method-heading">
+              <h2 id="task-method-heading" className={styles["groupTitle"]}>期限・提出方法</h2>
+              <dl className={[styles["details"], styles["detailGrid"]].join(" ")}>
+                <div className={styles["detail"]}>
+                  <dt>期限</dt>
+                  <dd>{formatDeadline(draft.deadline)}</dd>
+                </div>
+                <div className={styles["detail"]}>
+                  <dt>証拠提出方法</dt>
+                  <dd>写真で判定</dd>
+                </div>
+              </dl>
+            </section>
+            <section className={styles["detailGroup"]} aria-labelledby="task-reward-heading">
+              <h2 id="task-reward-heading" className={styles["groupTitle"]}>金額・公開設定</h2>
+              <dl className={styles["details"]}>
+                <div className={[styles["detail"], styles["reward"]].join(" ")}>
+                  <dt>金額設定</dt>
+                  <dd>{draft.reward}円</dd>
+                </div>
+                <div className={styles["detail"]}>
+                  <dt>金額の公開設定</dt>
+                  <dd>
+                    {draft.visibility === "private"
+                      ? "公開しない（自分のみに表示）"
+                      : "公開する（招待したフレンドに表示）"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
 
             <div className={styles["actions"]}>
               <button
