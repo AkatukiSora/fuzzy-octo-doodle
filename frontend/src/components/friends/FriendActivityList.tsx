@@ -7,6 +7,7 @@ import { taskRemainingText } from "../../lib/task-detail-display";
 import styles from "./FriendDetailContent.module.css";
 
 interface Props {
+  friendId: string;
   tasks: FriendActivityTask[];
   sort: TaskSort;
   onSort: (sort: TaskSort) => void;
@@ -15,7 +16,7 @@ interface Props {
   loadingMore: boolean;
   now: number;
 }
-export function FriendActivityList({ tasks, now, sort, onSort, nextCursor, onMore, loadingMore }: Props) {
+export function FriendActivityList({ friendId, tasks, now, sort, onSort, nextCursor, onMore, loadingMore }: Props) {
   return (
     <section aria-labelledby="friend-tasks-heading">
       <div className={styles["listHeading"]}>
@@ -33,7 +34,7 @@ export function FriendActivityList({ tasks, now, sort, onSort, nextCursor, onMor
             const remaining = Date.parse(task.dueAt) === now ? "残り1分未満" : taskRemainingText(task.dueAt, task.status, now);
             const label = task.status === "reviewing" ? "審査期限" : task.status === "disputed" ? "追加提出期限" : "期限";
             return <li key={task.id} className={overdue ? styles["overdue"] : undefined}>
-              <TaskCard href={`/tasks/${task.id}`} title={task.title} description={task.achievementCondition || "達成条件の指定なし"} deadline={`${label}：${new Date(task.dueAt).toLocaleString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}`} status={task.status} remainingText={remaining} />
+              <TaskCard href={`/friends/${encodeURIComponent(friendId)}/tasks/${encodeURIComponent(task.id)}`} title={task.title} description={task.achievementCondition || "達成条件の指定なし"} deadline={`${label}：${new Date(task.dueAt).toLocaleString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}`} status={task.status} remainingText={remaining} />
             </li>;
           })}
         </ul>

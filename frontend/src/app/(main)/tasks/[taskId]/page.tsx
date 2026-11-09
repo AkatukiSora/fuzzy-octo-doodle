@@ -138,7 +138,9 @@ export default function TaskDetailPage({
   params: Promise<{ taskId: string }>;
 }) {
   const { taskId } = use(params);
-  const isHomeDetail = usePathname().startsWith("/home/tasks/");
+  const pathname = usePathname();
+  const friendId = /^\/friends\/([^/]+)\/tasks\/[^/]+\/?$/.exec(pathname)?.[1];
+  const backHref = friendId ? `/friends/${friendId}` : pathname.startsWith("/home/tasks/") ? "/" : "/tasks";
   const [now, setNow] = useState<number | null>(null);
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<TaskLoadError | null>(null);
@@ -253,7 +255,7 @@ export default function TaskDetailPage({
   return (
     <AppLayout showHeader={false}>
       <div className={styles["screen"]}>
-        <PageHeader title="タスク詳細" backHref={isHomeDetail ? "/" : "/tasks"} />
+        <PageHeader title="タスク詳細" backHref={backHref} />
 
         {!task && !error ? (
           <Loading message="タスク詳細を読み込んでいます..." />

@@ -142,7 +142,7 @@ export function FriendDetailContent({ friendId }: { friendId: string }) {
               <TaskStatsCard completionRate={data.stats.successRate} completedCount={0} activeCount={Math.max(0, data.stats.activeCount - expiredSinceLoad.length)} overdueCount={data.stats.overdueCount + expiredSinceLoad.filter(task => isTaskOverdue(task, now)).length} />
               <p className={styles["explanation"]}>達成率は達成・未達成の確定済みタスクから計算しています。判定不能は含みません。</p>
               {error && <p role="alert" className={styles["error"]}>{error}</p>}
-              <FriendActivityList tasks={liveTasks} now={now} sort={sort} onSort={setSort} nextCursor={data.tasks.nextCursor} onMore={() => { void more(); }} loadingMore={loadingMore} />
+              <FriendActivityList friendId={friendId} tasks={liveTasks} now={now} sort={sort} onSort={setSort} nextCursor={data.tasks.nextCursor} onMore={() => { void more(); }} loadingMore={loadingMore} />
             </>
           ) : <ErrorState description={error} onRetry={() => { setRevision(value => value + 1); }} />}
         </div>
