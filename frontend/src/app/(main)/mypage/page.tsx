@@ -23,8 +23,8 @@ const settings = [
   },
   {
     label: "決済履歴",
-    description: "準備中",
-    href: null,
+    description: "請求内容や決済状況を確認できます。",
+    href: "/mypage/payments",
     icon: "payment",
   },
   {
@@ -168,11 +168,7 @@ export default function MyPage() {
                 {setting.description && <small>{setting.description}</small>}
               </span>
             </>;
-            return setting.href === null ? (
-              <div key={setting.label} className={styles["settingItem"]} aria-disabled="true">
-                {content}
-              </div>
-            ) : (
+            return (
               <Link key={setting.label} href={setting.href} className={styles["settingItem"]}>
                 {content}
                 <Chevron />
