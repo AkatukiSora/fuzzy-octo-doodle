@@ -1,0 +1,86 @@
+.card {
+  min-width: 0;
+  padding: var(--spacing-lg);
+  border: 1px solid #eeeef2;
+  border-radius: var(--radius-lg);
+  background: var(--color-background);
+  overflow-wrap: anywhere;
+}
+
+.card h2 {
+  margin: 0 0 var(--spacing-lg);
+  font-size: 1.1rem;
+}
+
+.currentEmail {
+  margin: 0 0 var(--spacing-lg);
+}
+
+.currentEmail dt {
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.currentEmail dd {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.settingItem {
+  display: flex;
+  width: 100%;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: var(--spacing-md);
+  border: 1px solid #e8e4f1;
+  border-radius: var(--radius-md);
+  background: #f7f5fc;
+  color: #777495;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.settingItem > span:first-child {
+  min-width: 0;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ece7f7;
+  color: #695487;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.description,
+.help p {
+  margin: var(--spacing-sm) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+
+.help {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid #eeeef2;
+}
+
+.help h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: var(--spacing-md);
+  }
+}
