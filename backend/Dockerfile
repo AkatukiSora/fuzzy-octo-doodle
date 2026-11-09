@@ -17,6 +17,7 @@ WORKDIR /app
 COPY --from=build /out/package.json ./
 COPY --from=build /out/node_modules ./node_modules
 COPY --from=build /out/dist ./dist
+COPY backend/fixtures ./fixtures
 USER node
 EXPOSE 8080
 CMD ["node", "dist/main.js"]

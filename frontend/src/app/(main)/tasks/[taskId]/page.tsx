@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { EvidencePhoto } from "../../../../components/ui/ImagePreview";
 import { usePathname } from "next/navigation";
 import { AppLayout } from "../../../../components/layout/AppLayout";
 import { PageHeader } from "../../../../components/layout/PageHeader";
@@ -360,7 +361,7 @@ export default function TaskDetailPage({
                           {evidence.photoUrls.map((url, photoIndex) => (
                             <a href={url} target="_blank" rel="noopener noreferrer" key={photoIndex}>
                               {/* Signed URLs are loaded directly without image optimization. */}
-                              <img src={url} alt={`${evidence.submissionType === "initial" ? "初回提出" : "追加提出"}の証拠写真${String(photoIndex + 1)}`} />
+                              <EvidencePhoto key={url} src={url} alt={`${evidence.submissionType === "initial" ? "初回提出" : "追加提出"}の証拠写真${String(photoIndex + 1)}`} />
                             </a>
                           ))}
                         </div>
