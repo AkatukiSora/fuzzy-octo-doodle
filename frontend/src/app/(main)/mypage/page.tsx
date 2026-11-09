@@ -20,6 +20,12 @@ const settings = [
     icon: "bell",
   },
   {
+    label: "決済履歴",
+    description: "準備中",
+    href: null,
+    icon: "payment",
+  },
+  {
     label: "ヘルプ・お問い合わせ",
     description: "使い方や不具合について確認できます。",
     href: "/help",
@@ -41,6 +47,12 @@ const settings = [
 
 function SettingIcon({ name }: { name: (typeof settings)[number]["icon"] }) {
   const paths = {
+    payment: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 10h18M7 15h4" />
+      </>
+    ),
     account: (
       <>
         <rect x="6" y="4" width="12" height="17" rx="2" />
@@ -107,9 +119,6 @@ export default function MyPage() {
       <div className={styles["page"]}>
         <header className={styles["pageHeader"]}>
           <h1>マイページ</h1>
-          <Link href="/mypage/settings" className={styles["settingsButton"]} aria-label="設定">
-            <span aria-hidden="true">⚙</span>
-          </Link>
         </header>
 
         <section className={styles["profileCard"]} aria-label="プロフィール">
@@ -145,7 +154,7 @@ export default function MyPage() {
               <strong>14 <small>件</small></strong>
               <span className={styles["statSub"]}>/ 20 件</span>
             </div>
-            <div className={styles["stat"]}>
+            <div className={[styles["stat"], styles["overdue"]].join(" ")}>
               <span className={styles["statLabel"]}>期限切れ件数</span>
               <strong>3 <small>件</small></strong>
             </div>
@@ -153,8 +162,8 @@ export default function MyPage() {
         </section>
 
         <nav className={styles["settingsList"]} aria-label="マイページ設定">
-          {settings.map((setting) => (
-            <Link key={setting.label} href={setting.href} className={styles["settingItem"]}>
+          {settings.map((setting) => {
+            const content = <>
               <span className={styles["settingIcon"]}>
                 <SettingIcon name={setting.icon} />
               </span>
@@ -162,9 +171,18 @@ export default function MyPage() {
                 <strong>{setting.label}</strong>
                 {setting.description && <small>{setting.description}</small>}
               </span>
-              <span className={styles["chevron"]} aria-hidden="true">›</span>
-            </Link>
-          ))}
+            </>;
+            return setting.href === null ? (
+              <div key={setting.label} className={styles["settingItem"]} aria-disabled="true">
+                {content}
+              </div>
+            ) : (
+              <Link key={setting.label} href={setting.href} className={styles["settingItem"]}>
+                {content}
+                <span className={styles["chevron"]} aria-hidden="true">›</span>
+              </Link>
+            );
+          })}
           <Link
             href="/login"
             className={[styles["settingItem"], styles["logout"]].filter(Boolean).join(" ")}

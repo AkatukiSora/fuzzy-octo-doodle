@@ -22,18 +22,6 @@
   font-weight: 700;
 }
 
-.settingsButton {
-  position: absolute;
-  right: 0;
-  display: grid;
-  width: 3rem;
-  height: 3rem;
-  place-items: center;
-  color: #4a4b78;
-  font-size: 1.5rem;
-  text-decoration: none;
-}
-
 .profileCard {
   display: flex;
   align-items: center;
@@ -171,6 +159,11 @@
 
 .stat strong small {
   font-size: 0.9rem;
+}
+
+.overdue .statLabel,
+.overdue strong {
+  color: var(--color-danger);
 }
 
 .settingsList {
