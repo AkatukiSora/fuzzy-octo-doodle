@@ -57,7 +57,7 @@ const filtersByView: Record<TaskListView, { label: string; value: TaskFilter }[]
   history: [
     { label: "すべて", value: "all" },
     { label: "完了", value: "success" },
-    { label: "失敗", value: "failed" },
+    { label: "未達成", value: "failed" },
     { label: "判定不能", value: "indeterminate" },
     { label: "終了", value: "closed" },
   ],

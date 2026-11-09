@@ -19,7 +19,7 @@ const sectionConfig = {
   active: "進行中",
   reviewing: "審査中",
   success: "完了",
-  failed: "失敗",
+  failed: "未達成",
   other: "その他",
 };
 
