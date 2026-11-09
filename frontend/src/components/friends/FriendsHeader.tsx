@@ -58,7 +58,7 @@ export function FriendsHeader({ activeTab, onTabChange }: FriendsHeaderProps) {
           }}
           aria-pressed={activeTab === "inviting"}
         >
-          招待中
+          申請・招待中
         </button>
       </nav>
     </header>
