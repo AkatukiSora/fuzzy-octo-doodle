@@ -1,32 +1,10 @@
 
 
-.page {
-  width: min(100%, 720px);
-  margin: 0 auto;
-  padding: 28px 20px 120px;
-  box-sizing: border-box;
-}
-
-.pageHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.pageHeader h1 {
-  margin: 0;
-  color: #303568;
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
 .profileCard {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 20px;
+  padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   background: #faf8f4;
 }
@@ -36,6 +14,8 @@
   width: 68px;
   height: 68px;
   flex-shrink: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
   place-items: center;
   border-radius: 50%;
   background: #d1c9bb;
@@ -43,6 +23,7 @@
 }
 
 .avatar img {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -54,6 +35,8 @@
   flex: 1;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .profileName strong {
@@ -67,6 +50,11 @@
 }
 
 .editLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
   padding: 0.75rem 1rem;
   border: 1px solid #e4e0dc;
   border-radius: 10px;
@@ -78,31 +66,22 @@
   white-space: nowrap;
 }
 
-.editLink span,
-.chevron {
-  margin-left: 6px;
-  font-size: 1.25rem;
-  line-height: 0;
-  vertical-align: -2px;
-}
-
 .statsCard {
-  margin-top: 16px;
-  padding: 18px;
+  padding: var(--spacing-lg);
   border: 1px solid #eeeef2;
   border-radius: var(--radius-lg);
   background: white;
 }
 
 .statsCard h2 {
-  margin: 0 0 20px;
+  margin: 0 0 var(--spacing-lg);
   color: #303568;
   font-size: 1.1rem;
 }
 
 .stats {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .achievement,
@@ -125,6 +104,7 @@
   color: #8586a4;
   font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.5;
 }
 
 .progress {
@@ -161,7 +141,10 @@
   font-size: 0.9rem;
 }
 
-.overdue .statLabel,
+.overdue .statLabel {
+  color: var(--color-text);
+}
+
 .overdue strong {
   color: var(--color-danger);
 }
@@ -169,8 +152,7 @@
 .settingsList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
 }
 
 .settingItem {
@@ -209,6 +191,8 @@
   flex: 1;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .settingText strong {
@@ -222,8 +206,12 @@
 }
 
 .chevron {
+  display: block;
+  flex-shrink: 0;
+  align-self: center;
+  width: 20px;
+  height: 20px;
   color: #9293b0;
-  font-size: 1.8rem;
 }
 
 .logout {
@@ -238,20 +226,11 @@
 }
 
 @media (max-width: 767px) {
-  :global(html),
-  :global(body) {
-    overflow-y: auto;
-  }
-
-  .page {
-    min-height: calc(100dvh - 100px);
-    box-sizing: border-box;
-    padding: 12px 16px 24px;
-  }
-
   .profileCard {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
     gap: 12px;
-    padding: 10px 12px;
+    padding: var(--spacing-md);
   }
 
   .avatar {
@@ -269,23 +248,20 @@
   }
 
   .editLink {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
     padding: 0.75rem 1rem;
     font-size: 0.9rem;
   }
 
   .statsCard {
-    margin-top: 10px;
-    padding: 12px;
+    padding: var(--spacing-md);
   }
 
   .statsCard h2 {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     font-size: 1.1rem;
-  }
-
-  .settingsList {
-    gap: 4px;
-    margin-top: 8px;
   }
 
   .settingItem {
@@ -317,10 +293,6 @@
     font-size: 0.8rem;
   }
 
-  .chevron {
-    font-size: 1.8rem;
-  }
-
   .stats {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0;
@@ -338,7 +310,7 @@
   }
 
   .statLabel {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   .progress {

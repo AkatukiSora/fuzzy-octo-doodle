@@ -1,20 +1,8 @@
-.page {
-  width: min(100%, 720px);
-  height: calc(100dvh - 100px);
-  margin: 0 auto;
-  padding: 0 16px 12px;
-  box-sizing: border-box;
-  overflow: hidden;
-  color: #303568;
-}
-
 .avatarCard {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 36px;
-  min-height: 190px;
-  margin-top: 12px;
+  gap: 24px;
   padding: 20px;
   border-radius: var(--radius-lg);
   background: #f8f6fc;
@@ -24,6 +12,8 @@
   display: grid;
   width: 150px;
   height: 150px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   overflow: hidden;
   place-items: center;
   border-radius: 50%;
@@ -31,6 +21,7 @@
 }
 
 .avatar img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -40,7 +31,9 @@
   display: inline-flex;
   min-height: 56px;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
   padding: 0 24px;
   border: 1px solid #e3def3;
   border-radius: 12px;
@@ -52,7 +45,15 @@
 }
 
 .imageIcon {
-  font-size: 1.5rem;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.avatarButton:has(input:focus-visible),
+.saveButton:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 .fileInput {
@@ -65,9 +66,8 @@
 
 .form {
   display: flex;
-  height: calc(100% - 2.5rem);
   flex-direction: column;
-  margin-top: 16px;
+  gap: 24px;
   padding: 24px 20px;
   box-sizing: border-box;
   border: 1px solid #eeeef2;
@@ -78,7 +78,15 @@
 .nameField {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.form > p {
+  margin: 0;
+  color: var(--color-danger);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .nameField label {
@@ -121,8 +129,6 @@
   width: 100%;
   min-height: 58px;
   flex-shrink: 0;
-  margin-top: auto;
-  margin-bottom: 5rem;
   border: 0;
   border-radius: 14px;
   background: #c9c0f1;
@@ -138,14 +144,10 @@
 }
 
 @media (max-width: 767px) {
-  .page {
-    padding: 0 16px 12px;
-  }
-
   .avatarCard {
-    gap: 20px;
-    min-height: 150px;
-    padding: 14px;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 16px;
   }
 
   .avatar {
@@ -160,7 +162,6 @@
   }
 
   .form {
-    height: calc(100% - 230px);
     padding: 20px 16px;
   }
 }
