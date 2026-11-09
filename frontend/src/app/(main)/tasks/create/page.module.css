@@ -8,9 +8,9 @@
 .formCard {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  margin: 0 16px 14px;
-  padding: 16px;
+  gap: 24px;
+  margin: 24px 16px;
+  padding: 24px;
   border: 1px solid #edf0f5;
   border-radius: 14px;
   background: #fff;
@@ -29,6 +29,10 @@
 
 .fieldset {
   width: 100%;
+}
+
+.fieldset > .labelRow {
+  margin-bottom: 8px;
 }
 
 .labelRow {
@@ -183,16 +187,33 @@
   font-size: 15px;
 }
 
-.evidenceOption {
+.evidenceOption,
+.visibilityOption {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-height: 80px;
-  padding: 12px 16px;
-  border: 1.5px solid #8a5aff;
+  gap: 12px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 16px;
+  border: 1px solid #e8ebf1;
   border-radius: 12px;
-  background: #faf7ff;
+  background: #fff;
   cursor: pointer;
+}
+
+.evidenceOption:has(input:checked),
+.visibilityOption:has(input:checked) {
+  border-color: #8a5aff;
+  background: #faf7ff;
+}
+
+@media (hover: hover) {
+  .evidenceOption:hover,
+  .visibilityOption:hover {
+    border-color: #8a5aff;
+    background: #faf7ff;
+  }
 }
 
 .evidenceOption input,
@@ -206,15 +227,15 @@
   clip-path: inset(50%);
 }
 
-.evidenceOption:focus-within,
-.visibilityOption:focus-within {
+.evidenceOption:has(input:focus-visible),
+.visibilityOption:has(input:focus-visible) {
   outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
 
 .evidenceIcon {
-  width: 44px;
-  height: 44px;
+  width: 30px;
+  height: 34px;
   color: #7136f5;
 }
 
@@ -227,7 +248,7 @@
 .visibilityText {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -262,26 +283,7 @@
 .visibilityOptions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.visibilityOption {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-width: 0;
-  min-height: 88px;
-  padding: 12px 10px;
-  border: 1px solid #e8ebf1;
-  border-radius: 12px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.visibilityOption.selected {
-  border-color: #8a5aff;
-  background: #faf7ff;
+  gap: 12px;
 }
 
 .visibilityIcon {
@@ -301,7 +303,6 @@
 
 .visibilityText {
   flex: 1;
-  padding-top: 1px;
 }
 
 .visibilityText .optionTitle {
@@ -310,10 +311,6 @@
 
 .selected .visibilityText .optionTitle {
   color: #7136f5;
-}
-
-.visibilityText .optionDescription {
-  font-size: 12px;
 }
 
 .radioMark {
@@ -341,7 +338,6 @@
 .submitButton {
   width: 100%;
   min-height: 58px;
-  margin-top: -6px;
   border: 0;
   border-radius: 13px;
   background: linear-gradient(110deg, #6530f4, #5123eb);
@@ -362,31 +358,19 @@
   transform: translateY(1px);
 }
 
-@media (max-width: 420px) {
+@media (max-width: 767px) {
   .formCard {
-    gap: 19px;
-    margin: 0 10px 12px;
-    padding: 14px;
+    margin: 20px 16px;
+    padding: 16px;
   }
+}
 
+@media (max-width: 420px) {
   .label {
     font-size: 15px;
   }
 
   .visibilityOptions {
-    gap: 8px;
-  }
-
-  .visibilityOption {
-    gap: 7px;
-    padding: 10px 8px;
-  }
-
-  .visibilityText .optionTitle {
-    font-size: 14px;
-  }
-
-  .visibilityText .optionDescription {
-    font-size: 11px;
+    grid-template-columns: 1fr;
   }
 }
