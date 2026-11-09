@@ -69,15 +69,21 @@ export default function ProfileEditPage() {
 
   return (
     <AppLayout showHeader={false}>
+      <div className={styles["header"]}>
+        <div className={styles["headerInner"]}>
+          <PageHeader title="プロフィール編集" backHref="/mypage" />
+        </div>
+      </div>
       <div className={styles["page"]}>
-        <PageHeader title="プロフィール編集" backHref="/mypage" />
-
         <section className={styles["avatarCard"]} aria-label="プロフィール画像">
           <div className={styles["avatar"]}>
             <Image src={avatarUrl} alt="プロフィール画像" width={150} height={150} />
           </div>
           <label className={styles["avatarButton"]}>
-            <span className={styles["imageIcon"]} aria-hidden="true">▧</span>
+            <svg className={styles["imageIcon"]} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
             アイコンを変更
             <input
               type="file"

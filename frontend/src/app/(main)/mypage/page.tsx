@@ -98,6 +98,14 @@ function SettingIcon({ name }: { name: (typeof settings)[number]["icon"] }) {
   );
 }
 
+function Chevron() {
+  return (
+    <svg className={styles["chevron"]} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
 export default function MyPage() {
   const [nickname, setNickname] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -135,7 +143,7 @@ export default function MyPage() {
           </div>
           {profileError && <p role="alert">{profileError}</p>}
           <Link href="/mypage/profile/edit" className={styles["editLink"]}>
-            プロフィールを編集 <span aria-hidden="true">›</span>
+            プロフィールを編集 <Chevron />
           </Link>
         </section>
 
@@ -179,7 +187,7 @@ export default function MyPage() {
             ) : (
               <Link key={setting.label} href={setting.href} className={styles["settingItem"]}>
                 {content}
-                <span className={styles["chevron"]} aria-hidden="true">›</span>
+                <Chevron />
               </Link>
             );
           })}
@@ -191,7 +199,7 @@ export default function MyPage() {
             <span className={styles["settingText"]}>
               <strong>ログアウト</strong>
             </span>
-            <span className={styles["chevron"]} aria-hidden="true">›</span>
+            <Chevron />
           </Link>
         </nav>
       </div>
