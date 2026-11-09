@@ -24,7 +24,7 @@ export function FriendActivityList({ tasks, sort, onSort, nextCursor, onMore, lo
   return (
     <section aria-labelledby="friend-tasks-heading">
       <div className={styles["listHeading"]}>
-        <h2 id="friend-tasks-heading">進行中・期限切れのタスク</h2>
+        <h2 id="friend-tasks-heading">進行中のタスク</h2>
         <label className={styles["sort"]}>並び順
           <select value={sort} onChange={event => { onSort(event.target.value === "latest" ? "latest" : "soonest"); }}>
             <option value="soonest">期限が近い順</option><option value="latest">期限が遠い順</option>

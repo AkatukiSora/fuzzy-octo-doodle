@@ -25,7 +25,7 @@ export class KyselyFriendActivityRepository implements FriendActivityRepository 
     let q = dbOf(tx).selectFrom("tasks").selectAll()
       .select(due.as("due_at"))
       .select(sql<string>`to_char(${due} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`.as("cursor_at"))
-      .where("user_id", "=", query.owner).where("status", "in", ["active", "reviewing", "disputed", "failed"]);
+      .where("user_id", "=", query.owner).where("status", "in", ["active", "reviewing", "disputed"]);
     const ascending = query.sort === "soonest";
     if (query.cursor !== undefined) {
       const cursor = decodeCursor(query.cursor);

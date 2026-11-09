@@ -137,16 +137,10 @@
 
 .taskList li {
   min-width: 0;
-  border: 1px solid transparent;
-  border-radius: 17px;
-}
-
-.taskList .overdue {
-  border-color: #e36a78;
-  background: #fff0f1;
 }
 
 .overdue > article {
+  border-color: #e36a78;
   background: #fff8f8;
 }
 
