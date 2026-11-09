@@ -16,7 +16,7 @@ const settings = [
   {
     label: "通知設定",
     description: "通知の受け取り方を設定できます。",
-    href: "/mypage/settings/notifications",
+    href: "/mypage/notifications",
     icon: "bell",
   },
   {
