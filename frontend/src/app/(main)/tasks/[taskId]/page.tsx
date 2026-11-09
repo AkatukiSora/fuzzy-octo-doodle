@@ -11,6 +11,7 @@ import { ErrorState } from "../../../../components/ui/ErrorState";
 import { Loading } from "../../../../components/ui/Loading";
 import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/taskEvidenceApi.ts";
 import type { TaskStatus } from "../../../../types/task";
+import { needsTaskCountdown, taskRemainingText } from "../../../../lib/task-detail-display";
 import styles from "./page.module.css";
 
 interface TaskDetail {
@@ -109,13 +110,6 @@ function formatDate(value: string, includeTime = false): string {
   }).format(new Date(value));
 }
 
-function getRemainingText(deadlineAt: string): string {
-  const remainingMilliseconds = Date.parse(deadlineAt) - Date.now();
-  if (remainingMilliseconds <= 0) return "期限を過ぎています";
-  const hours = Math.ceil(remainingMilliseconds / (60 * 60 * 1000));
-  if (hours < 24) return "あと" + String(hours) + "時間";
-  return "あと" + String(Math.ceil(hours / 24)) + "日";
-}
 
 const standardSteps = ["タスク作成", "挑戦中", "証拠提出", "審査中", "完了"];
 
@@ -145,6 +139,7 @@ export default function TaskDetailPage({
 }) {
   const { taskId } = use(params);
   const isHomeDetail = usePathname().startsWith("/home/tasks/");
+  const [now, setNow] = useState<number | null>(null);
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<TaskLoadError | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -236,6 +231,19 @@ export default function TaskDetailPage({
     };
   }, [task?.id, taskId, evidenceReloadKey]);
 
+  useEffect(() => {
+    if (!task || !needsTaskCountdown(task.status)) return;
+    const current = Date.now();
+    setNow(current);
+    if (Date.parse(task.deadlineAt) <= current) return;
+    const timer = window.setInterval(() => {
+      const updated = Date.now();
+      setNow(updated);
+      if (updated >= Date.parse(task.deadlineAt)) window.clearInterval(timer);
+    }, 1000);
+    return () => { window.clearInterval(timer); };
+  }, [task]);
+
   const visibleEvidenceState = evidenceState.taskId === taskId
     ? evidenceState.state
     : { kind: "loading" as const };
@@ -290,17 +298,21 @@ export default function TaskDetailPage({
                   <span className={styles["metaIcon"]} aria-hidden="true">◷</span>
                   <span className={styles["metaLabel"]}>残り時間</span>
                   <strong className={isActive ? styles["accent"] : ""}>
-                    {isActive ? getRemainingText(task.deadlineAt) : "—"}
+                    {now === null && needsTaskCountdown(task.status)
+                      ? "計算中…"
+                      : taskRemainingText(task.deadlineAt, task.status, now ?? Date.now())}
                   </strong>
                 </div>
-                {task.penaltyAmount !== undefined && (
-                  <div className={styles["metaItem"]}>
-                    <span className={styles["metaIcon"]} aria-hidden="true">◎</span>
-                    <span className={styles["metaLabel"]}>賭け金</span>
-                    <strong>{task.penaltyAmount.toLocaleString("ja-JP")}円</strong>
-                  </div>
-                )}
               </div>
+              {task.penaltyAmount !== undefined && (
+                <div className={styles["stake"]}>
+                  <div>
+                    <span className={styles["stakeLabel"]}>掛け金</span>
+                    <p className={styles["stakeDescription"]}>このタスクに設定した金額</p>
+                  </div>
+                  <strong className={styles["stakeAmount"]}>¥{task.penaltyAmount.toLocaleString("ja-JP")}</strong>
+                </div>
+              )}
             </section>
 
             <section className={styles["conditionCard"]}>

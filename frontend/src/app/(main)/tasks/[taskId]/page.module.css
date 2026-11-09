@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 16px 24px;
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
 }
 
 .taskCard,
@@ -74,7 +74,7 @@
 
 .metaGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border-top: 1px solid #edf0f5;
   padding-top: 12px;
 }
@@ -119,6 +119,45 @@
 
 .metaItem .accent {
   color: #f05d16;
+}
+
+.stake {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e5daf8;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-light);
+}
+
+.stakeLabel {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stakeDescription {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.stakeAmount {
+  color: var(--color-primary);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-top: var(--spacing-md);
+  }
 }
 
 .conditionCard {
