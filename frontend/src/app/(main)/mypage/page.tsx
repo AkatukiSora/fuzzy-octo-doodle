@@ -10,7 +10,7 @@ const settings = [
   {
     label: "アカウント設定",
     description: "メールアドレス・パスワードなどの設定ができます。",
-    href: "/mypage/settings",
+    href: "/mypage/account",
     icon: "account",
   },
   {
