@@ -1,0 +1,40 @@
+.screen {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  color: #101a33;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 16px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.section h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.content p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.content .error {
+  color: #b42332;
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-top: 20px;
+  }
+}
