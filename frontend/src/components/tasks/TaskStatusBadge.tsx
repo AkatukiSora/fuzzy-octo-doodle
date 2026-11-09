@@ -25,7 +25,7 @@ export const statusConfig = {
     variant: "success",
   },
   failed: {
-    label: "失敗",
+    label: "未達成",
     variant: "danger",
   },
   indeterminate: {

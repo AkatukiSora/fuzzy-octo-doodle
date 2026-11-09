@@ -14,11 +14,12 @@ import { OBJECT_STORAGE } from "./application/ports/object-storage.port.ts";
 import { parseStoragePath } from "./domain/shared/storage-path.ts";
 import { parseTaskId } from "./domain/shared/id-parsers.ts";
 import { brandAs } from "./domain/shared/brand.ts";
+import type { PhotoAccessGrant } from "./domain/task/visibility-policy.ts";
 import { seedEvidencePhotos, seedImageKeys } from "./seed-evidence-photos.ts";
 
 const taskId = parseTaskId("c2000000-0000-4000-8000-000000000011");
 const path = parseStoragePath(`evidence/${taskId}/new-upload/1.jpg`);
-const grant = brandAs<"PhotoAccessGrant">()({ taskId });
+const grant: PhotoAccessGrant = brandAs<"PhotoAccessGrant">()({ taskId, submissionType: "initial" });
 const token = (url: string) => url.slice("/api/mock-storage/".length);
 
 test("local storage preserves uploaded bytes, verifies existence and persists across restart", async (t) => {
