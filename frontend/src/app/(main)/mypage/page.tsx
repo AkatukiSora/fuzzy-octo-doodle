@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AppLayout } from "../../../components/layout/AppLayout";
+import { ProfilePageLayout } from "../../../components/layout/ProfilePageLayout";
 import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
 import styles from "./MyPage.module.css";
 
@@ -123,12 +123,7 @@ export default function MyPage() {
   }, []);
 
   return (
-    <AppLayout showHeader={false}>
-      <div className={styles["page"]}>
-        <header className={styles["pageHeader"]}>
-          <h1>マイページ</h1>
-        </header>
-
+    <ProfilePageLayout title="マイページ">
         <section className={styles["profileCard"]} aria-label="プロフィール">
           <div className={styles["avatar"]} aria-hidden="true">
             {avatarUrl ? (
@@ -202,7 +197,6 @@ export default function MyPage() {
             <Chevron />
           </Link>
         </nav>
-      </div>
-    </AppLayout>
+    </ProfilePageLayout>
   );
 }

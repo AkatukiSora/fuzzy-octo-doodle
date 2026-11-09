@@ -1,32 +1,10 @@
 
 
-.page {
-  width: min(100%, 720px);
-  margin: 0 auto;
-  padding: 28px 20px 120px;
-  box-sizing: border-box;
-}
-
-.pageHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.pageHeader h1 {
-  margin: 0;
-  color: #303568;
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
 .profileCard {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px 20px;
+  padding: var(--spacing-lg);
   border-radius: var(--radius-lg);
   background: #faf8f4;
 }
@@ -89,22 +67,21 @@
 }
 
 .statsCard {
-  margin-top: 16px;
-  padding: 18px;
+  padding: var(--spacing-lg);
   border: 1px solid #eeeef2;
   border-radius: var(--radius-lg);
   background: white;
 }
 
 .statsCard h2 {
-  margin: 0 0 20px;
+  margin: 0 0 var(--spacing-lg);
   color: #303568;
   font-size: 1.1rem;
 }
 
 .stats {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .achievement,
@@ -127,6 +104,7 @@
   color: #8586a4;
   font-size: 0.85rem;
   font-weight: 700;
+  line-height: 1.5;
 }
 
 .progress {
@@ -163,7 +141,10 @@
   font-size: 0.9rem;
 }
 
-.overdue .statLabel,
+.overdue .statLabel {
+  color: var(--color-text);
+}
+
 .overdue strong {
   color: var(--color-danger);
 }
@@ -171,8 +152,7 @@
 .settingsList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
 }
 
 .settingItem {
@@ -246,22 +226,11 @@
 }
 
 @media (max-width: 767px) {
-  :global(html),
-  :global(body) {
-    overflow-y: auto;
-  }
-
-  .page {
-    min-height: calc(100dvh - 100px);
-    box-sizing: border-box;
-    padding: 12px 16px 24px;
-  }
-
   .profileCard {
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 12px;
-    padding: 10px 12px;
+    padding: var(--spacing-md);
   }
 
   .avatar {
@@ -287,18 +256,12 @@
   }
 
   .statsCard {
-    margin-top: 10px;
-    padding: 12px;
+    padding: var(--spacing-md);
   }
 
   .statsCard h2 {
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     font-size: 1.1rem;
-  }
-
-  .settingsList {
-    gap: 4px;
-    margin-top: 8px;
   }
 
   .settingItem {
@@ -347,7 +310,7 @@
   }
 
   .statLabel {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   .progress {

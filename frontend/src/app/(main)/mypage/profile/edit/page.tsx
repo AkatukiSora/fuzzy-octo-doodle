@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import type { ChangeEvent, SubmitEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AppLayout } from "../../../../../components/layout/AppLayout";
-import { PageHeader } from "../../../../../components/layout/PageHeader";
+import { ProfilePageLayout } from "../../../../../components/layout/ProfilePageLayout";
 import {
   fetchProfile,
   readStoredAvatar,
@@ -68,13 +67,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <AppLayout showHeader={false}>
-      <div className={styles["header"]}>
-        <div className={styles["headerInner"]}>
-          <PageHeader title="プロフィール編集" backHref="/mypage" />
-        </div>
-      </div>
-      <div className={styles["page"]}>
+    <ProfilePageLayout title="プロフィール編集" backHref="/mypage">
         <section className={styles["avatarCard"]} aria-label="プロフィール画像">
           <div className={styles["avatar"]}>
             <Image src={avatarUrl} alt="プロフィール画像" width={150} height={150} />
@@ -120,7 +113,6 @@ export default function ProfileEditPage() {
             {isLoading ? "読み込み中..." : isSaving ? "保存中..." : "保存する"}
           </button>
         </form>
-      </div>
-    </AppLayout>
+    </ProfilePageLayout>
   );
 }
