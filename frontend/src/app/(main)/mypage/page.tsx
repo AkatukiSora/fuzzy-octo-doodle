@@ -30,7 +30,7 @@ const settings = [
   {
     label: "ヘルプ・お問い合わせ",
     description: "使い方や不具合について確認できます。",
-    href: "/help",
+    href: "/mypage/help",
     icon: "help",
   },
   {
