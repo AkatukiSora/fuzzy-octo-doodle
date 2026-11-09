@@ -3,19 +3,15 @@ import styles from "./TaskStatsCard.module.css";
 
 interface TaskStatsCardProps {
   completionRate: number | null;
-  completedCount: number;
   overdueCount: number;
-  activeCount?: number;
-  totalCount?: number;
+  activeCount: number | null;
   title?: string;
 }
 
 export function TaskStatsCard({
   completionRate,
-  completedCount,
   overdueCount,
   activeCount,
-  totalCount,
   title,
 }: TaskStatsCardProps) {
   const safeRate = completionRate !== null && Number.isFinite(completionRate)
@@ -94,19 +90,17 @@ export function TaskStatsCard({
               <span className={styles["percentage"]}>
                 {completionRate === null ? "—" : `${String(displayRate)}%`}
               </span>
-              {totalCount !== undefined && <small className={styles["sub"]}>{completedCount} / {totalCount}</small>}
             </div>
           </div>
         </div>
 
         <div className={styles["stat"]}>
-          <p className={styles["label"]}>{activeCount === undefined ? "達成件数" : "進行中のタスク"}</p>
+          <p className={styles["label"]}>進行中のタスク</p>
 
           <p className={styles["number"]}>
-            {activeCount ?? completedCount}
-            <span className={styles["unit"]}>件</span>
+            {activeCount ?? "—"}
+            {activeCount !== null && <span className={styles["unit"]}>件</span>}
           </p>
-          {totalCount !== undefined && activeCount === undefined && <p className={styles["sub"]}>/ {totalCount} 件</p>}
         </div>
 
         <div className={styles["stat"]}>

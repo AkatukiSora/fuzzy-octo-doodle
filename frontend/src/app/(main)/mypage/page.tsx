@@ -5,6 +5,7 @@ import { TaskStatsCard } from "../../../components/tasks/TaskStatsCard";
 import { useEffect, useState } from "react";
 import { ProfilePageLayout } from "../../../components/layout/ProfilePageLayout";
 import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
+import { fetchOngoingTaskCount } from "../../../lib/myTaskStatsApi";
 import styles from "./MyPage.module.css";
 
 const settings = [
@@ -111,6 +112,16 @@ export default function MyPage() {
   const [nickname, setNickname] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [activeCount, setActiveCount] = useState<number | null>(null);
+  const [statsError, setStatsError] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchOngoingTaskCount(controller.signal)
+      .then(count => { if (!controller.signal.aborted) setActiveCount(count); })
+      .catch(() => { if (!controller.signal.aborted) setStatsError(true); });
+    return () => { controller.abort(); };
+  }, []);
 
   useEffect(() => {
     setAvatarUrl(readStoredAvatar());
@@ -143,7 +154,8 @@ export default function MyPage() {
           </Link>
         </section>
 
-        <TaskStatsCard title="今までのタスク状況" completionRate={70} completedCount={14} totalCount={20} overdueCount={3} />
+        <TaskStatsCard title="今までのタスク状況" completionRate={70} activeCount={activeCount} overdueCount={3} />
+        {statsError && <p role="alert">進行中のタスク件数を取得できませんでした。時間をおいて再度お試しください。</p>}
 
         <nav className={styles["settingsList"]} aria-label="マイページ設定">
           {settings.map((setting) => {

@@ -19,11 +19,13 @@
 }
 
 .stat {
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
+  justify-items: center;
   align-items: center;
-  gap: 2px;
+  row-gap: 8px;
   padding: 0 16px;
   text-align: center;
 }
@@ -33,7 +35,10 @@
 }
 
 .label {
-  margin: 0 0 6px;
+  display: grid;
+  align-self: stretch;
+  align-content: center;
+  margin: 0;
   color: var(--color-text);
   font-size: 0.85rem;
   font-weight: 700;
@@ -80,7 +85,7 @@
   display: flex;
   align-items: baseline;
   justify-content: center;
-  margin: 14px 0 0;
+  margin: 0;
   color: #303568;
   font-size: 2rem;
   font-weight: 800;
@@ -91,13 +96,6 @@
   margin-left: 4px;
   font-size: 0.9rem;
   font-weight: 700;
-}
-
-.sub {
-  margin: 0;
-  color: #8586a4;
-  font-size: 0.75rem;
-  line-height: 1.4;
 }
 
 .overdue {
@@ -126,9 +124,6 @@
     height: 72px;
   }
 
-  .number {
-    margin-top: 4px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
