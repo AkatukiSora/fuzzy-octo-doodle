@@ -30,6 +30,7 @@ DB（PostgreSQL）、API、frontend をコンテナで起動し、nginx で本�
 4. `api` — `tsx watch` で API が起動する（`127.0.0.1:8080`）。
 5. `frontend` — `next dev` が起動する。ホストには公開しない。
 6. `proxy` — nginx が `127.0.0.1:3000` で待ち受け、本番の Ingress と同じく `/api/*` を `api`、それ以外を `frontend` に振り分ける（設定は `infra/dev-proxy/default.conf`）。
+7. `jobs` — APIとは別プロセスで、期限切れ・審査終了の4処理を起動直後から順番に実行する。1巡の完了後に60秒待機して次の巡回を行う。`JOB_INTERVAL_SECONDS` で待機時間を設定できる。
 
 ブラウザでは `http://localhost:3000` を開く。フロントエンドの `fetch("/api/...")` が、本番と同じ同一オリジンで backend に届く。
 

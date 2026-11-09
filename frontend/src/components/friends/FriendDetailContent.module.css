@@ -1,0 +1,179 @@
+.screen {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  color: #101a33;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+}
+
+.state h2, .listHeading h2 {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.content p {
+  overflow-wrap: anywhere;
+}
+
+.explanation {
+  margin: -8px 0 0;
+  color: #68728a;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.notice, .state {
+  margin: 0;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+  line-height: 1.7;
+}
+
+.notice {
+  background: var(--color-primary-light);
+}
+
+.error {
+  color: #b42332;
+  line-height: 1.6;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu summary {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  list-style: none;
+  cursor: pointer;
+  color: #68728a;
+  font-size: 28px;
+  border-radius: 50%;
+}
+
+.menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 60;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  padding: 8px;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgb(16 26 51 / 10%);
+}
+
+.dropdown button {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #b42332;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown button:hover {
+  background: #fff0f1;
+}
+
+.listHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.listHeading h2 {
+  margin: 0;
+}
+
+.sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #68728a;
+  font-size: 13px;
+}
+
+.sort select, .reportForm select, .reportForm textarea {
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  background: #fff;
+  color: #101a33;
+  font: inherit;
+}
+
+.taskList {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.taskList li {
+  min-width: 0;
+}
+
+.overdue > article {
+  border-color: #e36a78;
+  background: #fff8f8;
+}
+
+.reportForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.reportForm p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.reportForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.reportForm textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.menu summary:focus-visible, .dropdown button:focus-visible, .sort select:focus-visible, .reportForm select:focus-visible, .reportForm textarea:focus-visible, .reportForm button:focus-visible, .state button:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-top: 20px;
+  }
+}

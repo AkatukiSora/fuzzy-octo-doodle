@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { z } from "zod";
+import { setTimeout } from "node:timers/promises";
 import { JobsModule } from "./composition/jobs.module.ts";
 import { CloseReviewPeriodsUseCase } from "./application/usecases/jobs/close-review-periods.usecase.ts";
 import { ExpireAdditionalEvidenceUseCase } from "./application/usecases/jobs/expire-additional-evidence.usecase.ts";
@@ -17,6 +18,8 @@ import { ExpireStaleUploadSessionsUseCase } from "./application/usecases/jobs/ex
  *
  * 環境変数:
  * - JOB_BATCH_SIZE: 1 回の実行で処理する最大件数（正の整数。省略時は 100）。
+ * - JOB_INTERVAL_SECONDS: 指定した場合は実行完了後に待機し、次の巡回を実行する（compose用）。
+ * - ジョブ名 all は4つのライフサイクル処理を順番に実行する。既存の単一ジョブ指定は1回実行のまま。
  * - DB の接続設定は API と同じ（PersistenceModule が読む）。
  *
  * 全体の流れ:
@@ -42,15 +45,36 @@ const JOBS = {
 
 const args = z
   .object({
-    jobName: z.enum(JOB_NAMES),
+    jobName: z.enum([...JOB_NAMES, "all"]),
     batchSize: z.coerce.number().int().positive().default(100),
+    intervalSeconds: z.coerce.number().int().min(1).optional(),
   })
-  .parse({ jobName: process.argv[2], batchSize: process.env["JOB_BATCH_SIZE"] });
+  .parse({ jobName: process.argv[2], batchSize: process.env["JOB_BATCH_SIZE"], intervalSeconds: process.env["JOB_INTERVAL_SECONDS"] });
 
 const context = await NestFactory.createApplicationContext(JobsModule);
+const stop = new AbortController();
+const stopped = () => stop.signal.aborted;
+const shutdown = () => { stop.abort(); };
+if (args.intervalSeconds !== undefined) {
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
+}
 try {
-  const result = await context.get(JOBS[args.jobName]).execute({ batchSize: args.batchSize });
-  console.log(JSON.stringify({ msg: "job finished", job: args.jobName, ...result }));
+  do {
+    for (const jobName of args.jobName === "all" ? JOB_NAMES : [args.jobName]) {
+      if (stopped()) break;
+      const result = await context.get(JOBS[jobName]).execute({ batchSize: args.batchSize });
+      console.log(JSON.stringify({ msg: "job finished", job: jobName, ...result }));
+    }
+    if (args.intervalSeconds === undefined || stopped()) break;
+    try {
+      await setTimeout(args.intervalSeconds * 1000, undefined, { signal: stop.signal });
+    } catch (error) {
+      if (!stopped()) throw error;
+    }
+  } while (!stopped());
 } finally {
+  process.removeListener("SIGTERM", shutdown);
+  process.removeListener("SIGINT", shutdown);
   await context.close();
 }

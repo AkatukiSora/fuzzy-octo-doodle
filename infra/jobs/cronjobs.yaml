@@ -1,4 +1,4 @@
-# 定期ジョブ。`infra/kustomization.yaml` の resources に `jobs` を加えるまで、クラスタには展開されない。
+# 定期ジョブ。`infra/kustomization.yaml` から展開する。
 # 実行間隔は暫定値で、業務上の期限に合わせて見直す。
 # Pod のラベルを backend と分けるのは、backend の Service の宛先に含まれないようにするため。
 apiVersion: batch/v1

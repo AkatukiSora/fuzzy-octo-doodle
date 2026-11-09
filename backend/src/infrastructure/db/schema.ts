@@ -134,7 +134,18 @@ export interface IdempotencyRequestsTable {
   created_at: Date;
 }
 
+export interface UserReportsTable {
+  id: string;
+  reporter_id: string;
+  target_user_id: string;
+  reason_type: string;
+  reason_detail: string;
+  idempotency_key: string;
+  created_at: Date;
+}
+
 export interface Database {
+  user_reports: UserReportsTable;
   users: UsersTable;
   friendships: FriendshipsTable;
   friend_invites: FriendInvitesTable;
