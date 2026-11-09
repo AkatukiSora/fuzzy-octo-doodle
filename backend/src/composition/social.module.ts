@@ -1,4 +1,7 @@
 import { Module } from "@nestjs/common";
+import { FriendActivityController } from "../presentation/http/friends/friend-activity.controller.ts";
+import { GetFriendActivityUseCase } from "../application/usecases/friends/get-friend-activity.usecase.ts";
+import { ReportUserUseCase } from "../application/usecases/friends/report-user.usecase.ts";
 import { PersistenceModule } from "./persistence.module.ts";
 import { SharedApplicationModule } from "./shared-application.module.ts";
 import { CreateObjectionUseCase } from "../application/usecases/objections/create-objection.usecase.ts";
@@ -30,7 +33,7 @@ import { FriendsController } from "../presentation/http/friends/friends.controll
  */
 @Module({
   imports: [PersistenceModule, SharedApplicationModule],
-  controllers: [ObjectionsController, FriendsController],
-  providers: [CreateObjectionUseCase, WithdrawObjectionUseCase, ListMyObjectionsUseCase, CreateFriendInviteUseCase, GetFriendInviteUseCase, CreateFriendRequestUseCase, AcceptFriendRequestUseCase, RejectFriendRequestUseCase, CancelFriendRequestUseCase, RemoveFriendUseCase, BlockUserUseCase, UnblockUserUseCase, ListFriendsUseCase, ListFriendRequestsUseCase, ListBlockedUsersUseCase, GetFriendDetailUseCase],
+  controllers: [ObjectionsController, FriendsController, FriendActivityController],
+  providers: [GetFriendActivityUseCase, ReportUserUseCase, CreateObjectionUseCase, WithdrawObjectionUseCase, ListMyObjectionsUseCase, CreateFriendInviteUseCase, GetFriendInviteUseCase, CreateFriendRequestUseCase, AcceptFriendRequestUseCase, RejectFriendRequestUseCase, CancelFriendRequestUseCase, RemoveFriendUseCase, BlockUserUseCase, UnblockUserUseCase, ListFriendsUseCase, ListFriendRequestsUseCase, ListBlockedUsersUseCase, GetFriendDetailUseCase],
 })
 export class SocialModule {}

@@ -1,4 +1,8 @@
 import { Inject, Module } from "@nestjs/common";
+import { FRIEND_ACTIVITY_REPOSITORY } from "../application/ports/friend-activity.repository.ts";
+import { USER_REPORT_REPOSITORY } from "../application/ports/user-report.repository.ts";
+import { KyselyFriendActivityRepository } from "../infrastructure/db/repositories/friend-activity.repository.ts";
+import { KyselyUserReportRepository } from "../infrastructure/db/repositories/user-report.repository.ts";
 import type { OnApplicationShutdown } from "@nestjs/common";
 import { S3Client } from "@aws-sdk/client-s3";
 import type { Kysely } from "kysely";
@@ -53,6 +57,8 @@ const S3_CLIENT = Symbol("S3Client");
  */
 @Module({
   providers: [
+    { provide: FRIEND_ACTIVITY_REPOSITORY, useClass: KyselyFriendActivityRepository },
+    { provide: USER_REPORT_REPOSITORY, useClass: KyselyUserReportRepository },
     { provide: POSTGRES_HANDLE, useFactory: (): PostgresHandle => createPostgresDialect(loadPostgresConfig(process.env)) },
     { provide: DATABASE, useFactory: (handle: PostgresHandle) => createDatabase(handle.dialect), inject: [POSTGRES_HANDLE] },
     { provide: UNIT_OF_WORK, useFactory: (db: Kysely<Database>) => new KyselyUnitOfWork(db), inject: [DATABASE] },
@@ -95,6 +101,8 @@ const S3_CLIENT = Symbol("S3Client");
     { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
   exports: [
+    FRIEND_ACTIVITY_REPOSITORY,
+    USER_REPORT_REPOSITORY,
     UNIT_OF_WORK,
     USER_REPOSITORY,
     FRIENDSHIP_REPOSITORY,

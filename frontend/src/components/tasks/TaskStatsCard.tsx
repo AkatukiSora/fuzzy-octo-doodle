@@ -2,17 +2,19 @@
 import styles from "./TaskStatsCard.module.css";
 
 interface TaskStatsCardProps {
-  completionRate: number;
+  completionRate: number | null;
   completedCount: number;
   overdueCount: number;
+  activeCount?: number;
 }
 
 export function TaskStatsCard({
   completionRate,
   completedCount,
   overdueCount,
+  activeCount,
 }: TaskStatsCardProps) {
-  const safeRate = Number.isFinite(completionRate)
+  const safeRate = completionRate !== null && Number.isFinite(completionRate)
     ? Math.max(0, Math.min(100, completionRate))
     : 0;
 
@@ -48,7 +50,8 @@ export function TaskStatsCard({
           aria-label="達成率"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={displayRate}
+          aria-valuenow={completionRate === null ? undefined : displayRate}
+          aria-valuetext={completionRate === null ? "集計対象のタスクがありません" : `${String(displayRate)}%`}
         >
           <svg
             viewBox="0 0 120 120"
@@ -82,16 +85,16 @@ export function TaskStatsCard({
           </svg>
 
           <span className={styles["percentage"]}>
-            {displayRate}%
+            {completionRate === null ? "—" : `${String(displayRate)}%`}
           </span>
         </div>
       </div>
 
       <div className={styles["stat"]}>
-        <p className={styles["label"]}>達成件数</p>
+        <p className={styles["label"]}>{activeCount === undefined ? "達成件数" : "進行中のタスク"}</p>
 
         <p className={styles["number"]}>
-          {completedCount}
+          {activeCount ?? completedCount}
           <span className={styles["unit"]}>件</span>
         </p>
       </div>
