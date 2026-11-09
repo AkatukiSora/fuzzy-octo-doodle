@@ -66,89 +66,6 @@
   white-space: nowrap;
 }
 
-.statsCard {
-  padding: var(--spacing-lg);
-  border: 1px solid #eeeef2;
-  border-radius: var(--radius-lg);
-  background: white;
-}
-
-.statsCard h2 {
-  margin: 0 0 var(--spacing-lg);
-  color: #303568;
-  font-size: 1.1rem;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.achievement,
-.stat {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  border-right: 1px solid #eeeef2;
-  text-align: center;
-}
-
-.stat:last-child {
-  border-right: 0;
-}
-
-.statLabel {
-  color: #8586a4;
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.progress {
-  display: flex;
-  width: 102px;
-  height: 102px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 13px solid #d5c8ff;
-  border-left-color: #efeff4;
-  border-radius: 50%;
-  color: #303568;
-}
-
-.progress span {
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.progress small,
-.statSub {
-  color: #8586a4;
-  font-size: 0.75rem;
-}
-
-.stat strong {
-  margin-top: 14px;
-  color: #303568;
-  font-size: 2rem;
-}
-
-.stat strong small {
-  font-size: 0.9rem;
-}
-
-.overdue .statLabel {
-  color: var(--color-text);
-}
-
-.overdue strong {
-  color: var(--color-danger);
-}
-
 .settingsList {
   display: flex;
   flex-direction: column;
@@ -255,15 +172,6 @@
     font-size: 0.9rem;
   }
 
-  .statsCard {
-    padding: var(--spacing-md);
-  }
-
-  .statsCard h2 {
-    margin-bottom: 20px;
-    font-size: 1.1rem;
-  }
-
   .settingItem {
     min-height: 5rem;
     gap: 10px;
@@ -293,46 +201,4 @@
     font-size: 0.8rem;
   }
 
-  .stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0;
-  }
-
-  .achievement,
-  .stat {
-    padding: 0 4px;
-    border-right: 1px solid #eeeef2;
-  }
-
-  .achievement {
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-
-  .statLabel {
-    font-size: 0.75rem;
-  }
-
-  .progress {
-    width: 72px;
-    height: 72px;
-    border-width: 9px;
-  }
-
-  .progress span {
-    font-size: 1.5rem;
-  }
-
-  .progress small,
-  .statSub {
-    font-size: 0.75rem;
-  }
-
-  .stat strong {
-    font-size: 2rem;
-  }
-
-  .stat strong {
-    margin-top: 4px;
-  }
 }

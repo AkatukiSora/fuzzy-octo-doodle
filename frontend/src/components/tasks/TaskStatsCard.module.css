@@ -1,40 +1,49 @@
+﻿.card {
+  width: 100%;
+  min-width: 0;
+  padding: var(--spacing-lg);
+  border: 1px solid #eeeef2;
+  border-radius: var(--radius-lg);
+  background: white;
+}
 
-.card {
+.title {
+  margin: 0 0 var(--spacing-lg);
+  color: #303568;
+  font-size: 1.1rem;
+}
+
+.stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: 100%;
-  box-sizing: border-box;
-  padding: 24px 16px;
-  border-radius: 16px;
-  background: #fcf8f4;
 }
 
 .stat {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-width: 0;
-  gap: 12px;
+  gap: 2px;
+  padding: 0 16px;
   text-align: center;
 }
 
 .stat + .stat {
-  border-left: 1px solid #e8e2df;
+  border-left: 1px solid #eeeef2;
 }
 
 .label {
-  margin: 0;
-  color: #545a70;
-  font-size: 15px;
+  margin: 0 0 6px;
+  color: var(--color-text);
+  font-size: 0.85rem;
   font-weight: 700;
   line-height: 1.5;
 }
 
 .progressWrapper {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 102px;
+  height: 102px;
   max-width: 100%;
   flex-shrink: 0;
   aspect-ratio: 1;
@@ -44,84 +53,72 @@
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
 }
 
 .progressCircle {
   transition: stroke-dashoffset 0.35s ease;
 }
 
-.percentage {
+.progressText {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #101a33;
-  font-size: 28px;
+  gap: 2px;
+}
+
+.percentage {
+  color: #303568;
+  font-size: 1.5rem;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .number {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  margin: 0;
-  color: #101a33;
-  font-size: 46px;
+  margin: 14px 0 0;
+  color: #303568;
+  font-size: 2rem;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .unit {
-  margin-left: 3px;
-  font-size: 20px;
+  margin-left: 4px;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
+.sub {
+  margin: 0;
+  color: #8586a4;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 .overdue {
-  color: #ff4c59;
+  color: var(--color-danger);
 }
 
 @media (max-width: 767px) {
   .card {
-    padding: 20px 8px;
+    padding: var(--spacing-md);
+  }
+
+  .title {
+    margin-bottom: 20px;
   }
 
   .stat {
-    gap: 10px;
+    padding: 0 4px;
   }
 
   .label {
-    font-size: 12px;
-  }
-
-  .progressWrapper {
-    width: 88px;
-    height: 88px;
-  }
-
-  .percentage {
-    font-size: 22px;
-  }
-
-  .number {
-    font-size: 34px;
-  }
-
-  .unit {
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 360px) {
-  .card {
-    padding: 16px 4px;
-  }
-
-  .label {
-    font-size: 10px;
+    font-size: 0.75rem;
   }
 
   .progressWrapper {
@@ -129,16 +126,8 @@
     height: 72px;
   }
 
-  .percentage {
-    font-size: 18px;
-  }
-
   .number {
-    font-size: 28px;
-  }
-
-  .unit {
-    font-size: 13px;
+    margin-top: 4px;
   }
 }
 

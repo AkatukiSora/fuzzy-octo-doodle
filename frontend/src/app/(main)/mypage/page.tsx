@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { TaskStatsCard } from "../../../components/tasks/TaskStatsCard";
 import { useEffect, useState } from "react";
 import { ProfilePageLayout } from "../../../components/layout/ProfilePageLayout";
 import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
@@ -142,27 +143,7 @@ export default function MyPage() {
           </Link>
         </section>
 
-        <section className={styles["statsCard"]} aria-labelledby="stats-title">
-          <h2 id="stats-title">今までのタスク状況</h2>
-          <div className={styles["stats"]}>
-            <div className={styles["achievement"]}>
-              <span className={styles["statLabel"]}>達成率</span>
-              <div className={styles["progress"]}>
-                <span>70%</span>
-                <small>14 / 20</small>
-              </div>
-            </div>
-            <div className={styles["stat"]}>
-              <span className={styles["statLabel"]}>達成件数</span>
-              <strong>14 <small>件</small></strong>
-              <span className={styles["statSub"]}>/ 20 件</span>
-            </div>
-            <div className={[styles["stat"], styles["overdue"]].join(" ")}>
-              <span className={styles["statLabel"]}>期限切れ件数</span>
-              <strong>3 <small>件</small></strong>
-            </div>
-          </div>
-        </section>
+        <TaskStatsCard title="今までのタスク状況" completionRate={70} completedCount={14} totalCount={20} overdueCount={3} />
 
         <nav className={styles["settingsList"]} aria-label="マイページ設定">
           {settings.map((setting) => {
