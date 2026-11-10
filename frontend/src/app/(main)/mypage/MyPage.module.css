@@ -132,14 +132,68 @@
 }
 
 .logout {
+  width: 100%;
   border-color: #ffe1e1;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.logout:hover {
+  background: #fff0f0;
+}
+
+.logout .settingIcon {
   background: #fff0f0;
 }
 
 .logout .settingIcon,
 .logout .settingText strong,
 .logout .chevron {
-  color: #ee4747;
+  color: #c93636;
+}
+
+.logoutActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.logoutCancel,
+.logoutConfirm {
+  flex: 1 1 120px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logoutCancel {
+  background: white;
+  color: var(--color-text-secondary);
+}
+
+.logoutConfirm {
+  border-color: #c93636;
+  background: #c93636;
+  color: white;
+}
+
+.logoutConfirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.logout:focus-visible,
+.logoutCancel:focus-visible,
+.logoutConfirm:focus-visible {
+  outline: 2px solid #c93636;
+  outline-offset: 2px;
 }
 
 @media (max-width: 767px) {
