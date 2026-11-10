@@ -12,6 +12,7 @@ import { Loading } from "../../../../components/ui/Loading";
 import { fetchTaskEvidences, type TaskEvidence } from "../../../../lib/taskEvidenceApi.ts";
 import type { TaskStatus } from "../../../../types/task";
 import { needsTaskCountdown, taskRemainingText } from "../../../../lib/task-detail-display";
+import { taskEvidenceAction } from "../../../../lib/task-evidence-action";
 import styles from "./page.module.css";
 
 interface TaskDetail {
@@ -251,6 +252,10 @@ export default function TaskDetailPage({
     : { kind: "loading" as const };
   const { steps: progressSteps, current: progressIndex } = getProgress(task?.status ?? "active");
   const isActive = task?.status === "active";
+  const evidenceAction = task ? taskEvidenceAction(
+    task,
+    visibleEvidenceState.kind === "loaded" ? visibleEvidenceState.evidences : null,
+  ) : null;
 
   return (
     <AppLayout showHeader={false}>
@@ -346,7 +351,7 @@ export default function TaskDetailPage({
               </ol>
             </section>
 
-            <section className={styles["panel"]}>
+            <section className={styles["panel"]} id="submitted-evidence">
               <h3>提出された証拠</h3>
               {visibleEvidenceState.kind === "loading" && (
                 <div className={styles["emptyEvidence"]} role="status" aria-live="polite">
@@ -415,13 +420,13 @@ export default function TaskDetailPage({
                   </button>
                 </div>
               )}
-              {task.viewer === "owner" && (isActive || task.status === "disputed") && (
+              {evidenceAction && (
                 <Link
                   className={styles["submitButton"]}
-                  href={`/tasks/${encodeURIComponent(task.id)}/evidence${task.status === "disputed" ? "/additional" : ""}`}
+                  href={evidenceAction.href}
                 >
                   <span aria-hidden="true">▧</span>
-                  {task.status === "disputed" ? "追加証拠を提出する" : "証拠を提出する"}
+                  {evidenceAction.label}
                 </Link>
               )}
             </section>
