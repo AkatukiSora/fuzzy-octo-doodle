@@ -103,80 +103,59 @@ export function EvidenceComplete({ type }: EvidenceCompleteProps) {
           </p>
         ) : (
           <>
-            {additional ? (
-              <section className={styles["additionalHero"]}>
-                <div
-                  className={styles["additionalCheck"]}
-                  aria-hidden="true"
+            <section className={styles["hero"]}>
+              <div
+                className={styles["successIcon"]}
+                aria-hidden="true"
+              >
+                <svg
+                  viewBox="0 0 200 160"
+                  width="200"
+                  height="160"
+                  fill="none"
                 >
-                  <svg
-                    width="42"
-                    height="42"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="2.5"
+                  <circle
+                    cx="100"
+                    cy="80"
+                    r="53"
+                    stroke="#9065F8"
+                    strokeWidth="8"
+                  />
+                  <path
+                    d="M78 81L94 97L124 65"
+                    stroke="#9065F8"
+                    strokeWidth="9"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                  />
+                  <g
+                    stroke="#B9A0FF"
+                    strokeWidth="5"
+                    strokeLinecap="round"
                   >
-                    <path d="M4 12L10 18L20 6" />
-                  </svg>
-                </div>
+                    <path d="M100 5V17" />
+                    <path d="M100 143V155" />
+                    <path d="M25 80H37" />
+                    <path d="M163 80H175" />
+                    <path d="M47 27L56 36" />
+                    <path d="M144 124L153 133" />
+                    <path d="M153 27L144 36" />
+                    <path d="M56 124L47 133" />
+                  </g>
+                </svg>
+              </div>
 
-                <h1>追加証拠を提出しました</h1>
+              <h1>{additional ? "追加証拠を提出しました" : "証拠を提出しました！"}</h1>
+              {additional ? (
                 <p>
                   提出した証拠はフレンドに通知されます。
                   <br />
                   相手が内容を確認し、対応を行います。
                 </p>
-              </section>
-            ) : (
-              <section className={styles["hero"]}>
-                <div
-                  className={styles["successIcon"]}
-                  aria-hidden="true"
-                >
-                  <svg
-                    viewBox="0 0 200 160"
-                    width="200"
-                    height="160"
-                    fill="none"
-                  >
-                    <circle
-                      cx="100"
-                      cy="80"
-                      r="53"
-                      stroke="#9065F8"
-                      strokeWidth="8"
-                    />
-                    <path
-                      d="M78 81L94 97L124 65"
-                      stroke="#9065F8"
-                      strokeWidth="9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <g
-                      stroke="#B9A0FF"
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                    >
-                      <path d="M100 5V17" />
-                      <path d="M100 143V155" />
-                      <path d="M25 80H37" />
-                      <path d="M163 80H175" />
-                      <path d="M47 27L56 36" />
-                      <path d="M144 124L153 133" />
-                      <path d="M153 27L144 36" />
-                      <path d="M56 124L47 133" />
-                    </g>
-                  </svg>
-                </div>
-
-                <h1>証拠を提出しました！</h1>
+              ) : (
                 <p>フレンドの確認を待っています。</p>
-              </section>
-            )}
+              )}
+            </section>
 
             {task && (
               <section className={styles["taskCard"]}>
@@ -271,11 +250,7 @@ export function EvidenceComplete({ type }: EvidenceCompleteProps) {
 
             <button
               type="button"
-              className={
-                additional
-                  ? styles["additionalPrimary"]
-                  : styles["primary"]
-              }
+              className={styles["primary"]}
               onClick={() => {
                 router.push(base);
               }}
