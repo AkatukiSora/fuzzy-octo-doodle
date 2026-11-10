@@ -58,18 +58,11 @@ curl -i http://127.0.0.1:8080/healthz      # backend に直接。200 が返る
 
 ## 開発用の認証
 
-認証方式が決まるまで、compose の API は環境変数 `DEV_AUTH_USER_ID` を設定して起動する。
+ComposeはBetter Authを使う。起動前に`.env.example`を参考に、32文字以上のランダムな`BETTER_AUTH_SECRET`をGit対象外の`.env`へ設定する。`/signup`で登録してから`/login`でログインする。詳細は[better-auth.md](better-auth.md)を参照。
 
-- 認証が必要なエンドポイントは、Cookie なしで呼べる。常にその固定の利用者（ID `11111111-1111-4111-8111-111111111111`、ニックネーム「開発ユーザー」）として扱われる。
-- `@Public()` のエンドポイントは、これまでどおり認証なしで呼べる。
-- 状態を変えるリクエスト(POST など)でも、`Origin` ヘッダは要らない。
-- 利用者は、`seed` サービスが `infra/dev-seed/seed.sql` で作る(何度実行しても同じ結果になる)。
-- 設定しなければ、本物の認証ガードが動く。`NODE_ENV=production` で設定すると、起動に失敗する。
-- 実装は `composition/auth.module.ts` と `presentation/http/auth/dev-auth.guard.ts`。認証の実装(`SessionAuthGuard`)には触れない。
+seedの固定ユーザーには認証アカウントがないため、そのままではログインできない。認証なしの`GET /api/me`は401になる。状態を変える業務APIでは`Origin`も必要。
 
-```bash
-curl -i http://127.0.0.1:8080/api/me      # 開発用の利用者として処理される
-```
+`DEV_AUTH_USER_ID`による固定ユーザー認証は既存のテスト・明示的な開発用途にのみ残す。Compose・Kubernetesでは設定しない。`NODE_ENV=production`で指定すると起動に失敗する。
 
 ## 動作確認用のデータ
 

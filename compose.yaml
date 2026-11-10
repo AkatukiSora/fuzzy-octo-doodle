@@ -74,8 +74,8 @@ services:
       DATABASE_NAME: app
       DATABASE_USER: app
       DATABASE_PASSWORD: app
-      # 開発用の認証。認証が必要なエンドポイントを、常にこの利用者として通す（infra/dev-seed/seed.sql で作る利用者）。
-      DEV_AUTH_USER_ID: "11111111-1111-4111-8111-111111111111"
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://localhost:3000}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?Set a random secret of at least 32 characters in .env}"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

@@ -41,7 +41,7 @@ import { loadObjectStorageConfig } from "../infrastructure/storage/s3-config.ts"
 import type { ObjectStorageConfig } from "../infrastructure/storage/s3-config.ts";
 
 const POSTGRES_HANDLE = Symbol("PostgresHandle");
-const DATABASE = Symbol("Database");
+export const DATABASE = Symbol("Database");
 const OBJECT_STORAGE_CONFIG = Symbol("ObjectStorageConfig");
 const S3_CLIENT = Symbol("S3Client");
 
@@ -101,6 +101,7 @@ const S3_CLIENT = Symbol("S3Client");
     { provide: PAYMENT_GATEWAY, useClass: MockPaymentGateway },
   ],
   exports: [
+    DATABASE,
     FRIEND_ACTIVITY_REPOSITORY,
     USER_REPORT_REPOSITORY,
     UNIT_OF_WORK,

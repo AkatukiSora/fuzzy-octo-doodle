@@ -13,6 +13,4 @@ export interface AuthenticatedRequest {
   readonly method: string;
   /** リクエストヘッダ。OriginGuard が `Origin` を読む */
   readonly headers: Readonly<Record<string, string | string[] | undefined>>;
-  /** cookie-parser などで解析した Cookie。未導入の間は undefined。SessionAuthGuard がセッション ID を読む */
-  readonly cookies?: Readonly<Record<string, string | undefined>>;
 }

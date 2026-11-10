@@ -3,7 +3,8 @@ import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { SESSION_AUTHENTICATOR } from "../../../application/ports/session.port.ts";
 import type { SessionAuthenticator } from "../../../application/ports/session.port.ts";
-import { todo } from "../../../application/shared/todo.ts";
+import { DomainError } from "../../../domain/shared/errors.ts";
+import type { AuthenticatedRequest } from "./authenticated-request.ts";
 import { CLOCK } from "../../../application/ports/clock.port.ts";
 import type { Clock } from "../../../application/ports/clock.port.ts";
 import { IS_PUBLIC_KEY } from "./public.decorator.ts";
@@ -16,20 +17,17 @@ import { IS_PUBLIC_KEY } from "./public.decorator.ts";
  * AuthModule が `APP_GUARD` として登録するので、新しいコントローラでも何もせずに適用される。
  * 検証に成功すると `request.userId` が載り、`@CurrentUser()` で読める。
  *
- * 実装の流れ（認証の担当が実装する）:
- * 1. リクエストの Cookie（`SESSION_COOKIE_NAME`）を取り出す。なければ DomainError("UNAUTHENTICATED")。
- * 2. `parseSessionToken` で形式を確認する。
- * 3. `SessionAuthenticator.authenticate(token, now)` で持ち主を得る。null なら DomainError("UNAUTHENTICATED")。
- * 4. `request.userId` に載せて true を返す。
+ * リクエストヘッダをSessionAuthenticatorへ渡し、Better AuthがCookieを検証する。
+ * 有効なセッションがなければ401、あれば既存users.idをrequest.userIdへ設定する。
  *
  * 依存の理由: `reflector` は `@Public()` の判定、`authenticator` はセッションの検証、`clock` はセッションの有効期限の比較に使う。
  */
 @Injectable()
 export class SessionAuthGuard implements CanActivate {
   private readonly reflector: Reflector;
-  /** セッションの検証（infrastructure の実装は DbSessionAuthenticator）。実装時に使う。骨格の間は未使用 */
+  /** Better Authのセッション検証。 */
   protected readonly authenticator: SessionAuthenticator;
-  /** 現在時刻。有効期限の判定に使う。骨格の間は未使用 */
+  /** 現在時刻。有効期限の判定に使う。 */
   protected readonly clock: Clock;
 
   constructor(
@@ -42,12 +40,16 @@ export class SessionAuthGuard implements CanActivate {
     this.clock = clock;
   }
 
-  canActivate(context: ExecutionContext): Promise<boolean> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean | undefined>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic === true) return Promise.resolve(true);
-    return todo("SessionAuthGuard");
+    if (isPublic === true) return true;
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const userId = await this.authenticator.authenticate(request.headers, this.clock.now());
+    if (userId === null) throw new DomainError("UNAUTHENTICATED", "ログインが必要です");
+    request.userId = userId;
+    return true;
   }
 }
