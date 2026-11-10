@@ -21,9 +21,9 @@ PUT URLは `PutObjectCommand` から生成し、拡張子 `jpg` / `png` / `webp`
 
 `exists()` は `HeadObject` の成功を `true`、明確な404 / `NotFound` を `false` とします。403、認証失敗、接続障害、5xxなどはそのままエラーになります。これはオブジェクトの存在確認だけで、画像の内容・サイズ・マジックバイト・安全性の検証ではありません。
 
-## 1PasswordとKubernetes
+## SealedSecretとKubernetes
 
-1Password Item `fuzzy-octo-doodle-s3` に次のフィールドを用意し、既存の1Password Kubernetes OperatorでKubernetes Secret `fuzzy-octo-doodle-s3` に同じキー名で同期してください。
+Kubernetes Secret `fuzzy-octo-doodle-s3` は、`infra/sealedsecret-s3.yaml` の `SealedSecret` から作られます。暗号文だけをGitに置き、クラスタの Sealed Secrets コントローラが復号します。次のキーを含めてください。
 
 ```text
 S3_ENDPOINT
@@ -34,9 +34,9 @@ S3_SECRET_ACCESS_KEY
 S3_FORCE_PATH_STYLE
 ```
 
-`infra/backend.yaml` はこのSecretを任意の `secretKeyRef` として参照します。Secretが未作成でも現在の `OBJECT_STORAGE_DRIVER=mock` で稼働でき、Secret値はGitに置きません。S3へ切り替える前に、operatorの既存設定でItemとSecretの紐付けを用意し、Secretの全必須キーとバケット設定を確認してください。Vault ID / Item ID はこのリポジトリで管理していないため、operator設定は実際の環境で値を確認して構成します。1Password APIをbackendから呼び出す必要はありません。
+`infra/backend.yaml` はこのSecretを任意の `secretKeyRef` として参照します。暗号化は `strict` スコープで、`metadata.name` と `metadata.namespace` に束縛されます。これらを変えると復号できないため、変更時は再度 `kubeseal` してください。値を変えるときは、平文の Secret を `kubeseal --cert <公開証明書>` に標準入力から渡して `SealedSecret` を作り直します。平文のSecretはコミットしません。手順の詳細と公開証明書は k8s-deploys の `apps/sealed-secrets/README.md` を参照してください。
 
-切り替え時は、`infra/backend.yaml` の `OBJECT_STORAGE_DRIVER` を `s3` に変更してbackendを再起動します。Secretが不足または不正ならbackendは起動に失敗するため、切り替え前にoperatorの同期状態と設定値を確認してください。Compose開発環境は明示的に `mock` のままです。
+切り替え時は、`infra/backend.yaml` の `OBJECT_STORAGE_DRIVER` を `s3` に変更してbackendを再起動します。Secretが不足または不正ならbackendは起動に失敗するため、切り替え前にSealedSecretの復号状態と設定値を確認してください。Compose開発環境は明示的に `mock` のままです。
 
 バケットの自動作成は行いません。NetworkPolicyのegressは現状定義されていません。将来egress制限を有効にする場合は、backendからDNSとストレージendpointへのHTTPS通信を許可してください。
 

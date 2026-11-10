@@ -9,6 +9,7 @@ resources:
   - frontend.yaml
   - ingress.yaml
   - networkpolicy.yaml
+  - sealedsecret-s3.yaml
   - jobs
 # 開発用のデータ(seed Job が流す)。compose も同じファイルを使う。
 configMapGenerator:

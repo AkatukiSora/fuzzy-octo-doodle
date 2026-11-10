@@ -20,6 +20,7 @@ Cloudflare Tunnel ─┬─ /api → backend  (8080) ── database (CloudNativ
 | `frontend.yaml` | frontend の Deployment と Service |
 | `ingress.yaml` | `donee.sora-lab.dev` の公開設定(`/api` と `/`) |
 | `networkpolicy.yaml` | 層ごとの許可する入口 |
+| `sealedsecret-s3.yaml` | S3互換ストレージの接続情報(暗号化済みの `SealedSecret`) |
 | `jobs/` | 期限切れ・審査終了の定期ジョブ |
 | `kustomization.yaml` | リソース一覧とイメージのタグ |
 | `../docs/object-storage.md` | S3互換ストレージ、Secret同期、権限、CORSの設定 |
@@ -44,7 +45,7 @@ CloudNativePG が `fuzzy-octo-doodle-db-app`(接続情報)と `fuzzy-octo-doodle
 
 ## オブジェクトストレージ
 
-backend は既定で `OBJECT_STORAGE_DRIVER=mock` のまま起動する。S3へ切り替える前に、`docs/object-storage.md` に従い1Password Item `fuzzy-octo-doodle-s3` をSecret `fuzzy-octo-doodle-s3` に同期し、非公開バケット、最小権限、CORSを準備する。Vault ID / Item ID を含むoperator設定はこのリポジトリに追加していない。Secretの任意参照は、S3を準備する間も現在のbackend Deploymentを起動可能にする。
+S3互換ストレージの接続情報は、`sealedsecret-s3.yaml` の `SealedSecret` が暗号化して保持する。クラスタの Sealed Secrets コントローラが復号し、Secret `fuzzy-octo-doodle-s3` を作る。backend はこの Secret を任意の `secretKeyRef` で参照するため、復号前でも Deployment は起動できる。値の変更・バケット・最小権限・CORS は `docs/object-storage.md` を参照する。
 
 スキーマ(`backend/migrations/`)は、同期のたびに `migrate` の Job が適用する。Job は Argo CD の Sync フックで、Cluster が Healthy になったあと(wave 1)、アプリの更新(wave 3)より先に実行される。失敗すると同期が止まり、アプリは更新されない。イメージは `backend/Dockerfile.migrate` で作る。
 
