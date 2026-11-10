@@ -1,0 +1,9 @@
+.document { background: #fff; border: 1px solid #e5e7f2; border-radius: 16px; padding: clamp(20px, 5vw, 32px); box-shadow: 0 3px 12px rgb(48 53 104 / 4%); }
+.date { margin: 0 0 24px; color: #747b99; font-size: 13px; }
+.body { display: grid; gap: 26px; }
+.section { display: grid; gap: 10px; }
+.section h2 { margin: 0; padding-left: 12px; border-left: 4px solid #7774d6; color: #303568; font-size: 17px; line-height: 1.5; }
+.section p, .section li { margin: 0; font-size: 14px; line-height: 1.9; color: #454b6c; overflow-wrap: anywhere; }
+.section ul, .section ol { margin: 0; padding-left: 22px; display: grid; gap: 5px; }
+.note { margin: 30px 0 0; padding: 14px 16px; border-radius: 10px; background: #f6f6fc; color: #606784; font-size: 12px; line-height: 1.8; }
+@media(max-width: 480px) { .document { border-radius: 12px; padding: 20px 16px; } .section h2 { font-size: 16px; } }
