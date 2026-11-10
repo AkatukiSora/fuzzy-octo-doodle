@@ -86,6 +86,47 @@
   line-height: 1.4;
 }
 
+.signup-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0;
+  color: #7772a5;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.signup-consent input {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 3px 0 0;
+  accent-color: #673cf2;
+  cursor: pointer;
+}
+
+.signup-consent label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.signup-consent a {
+  color: #6034e4;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.signup-consent a:hover {
+  color: #6038dc;
+}
+
+.signup-consent input:focus-visible,
+.signup-consent a:focus-visible {
+  outline: 2px solid #9a7af1;
+  outline-offset: 3px;
+}
+
 .signup-form .signup-submit {
   position: relative;
   min-height: 54px;

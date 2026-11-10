@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -5,6 +8,8 @@ import * as UI from "../../../components/ui";
 import "./signup.css";
 
 export default function SignupPage() {
+  const [hasAgreed, setHasAgreed] = useState(false);
+
   return (
     <main className="signup-page">
       <section className="signup-container" aria-labelledby="signup-title">
@@ -20,7 +25,7 @@ export default function SignupPage() {
           />
         </header>
 
-        <form className="signup-form">
+        <form className="signup-form" onReset={() => { setHasAgreed(false); }}>
           <div className="signup-field">
             <label className="signup-visually-hidden" htmlFor="username">ユーザー名</label>
             <UI.Input
@@ -79,7 +84,25 @@ export default function SignupPage() {
             />
           </div>
 
-          <UI.Button fullWidth size="lg" type="submit" className="signup-submit">
+          <div className="signup-consent">
+            <input
+              id="signup-consent"
+              name="termsAccepted"
+              type="checkbox"
+              value="true"
+              checked={hasAgreed}
+              onChange={(event) => { setHasAgreed(event.target.checked); }}
+              required
+            />
+            <label htmlFor="signup-consent">
+              <Link href="/terms" target="_blank" rel="noopener noreferrer">利用規約</Link>
+              と
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer">プライバシーポリシー</Link>
+              に同意する
+            </label>
+          </div>
+
+          <UI.Button fullWidth size="lg" type="submit" className="signup-submit" disabled={!hasAgreed}>
             <span>新規登録</span>
             <span className="signup-arrow" aria-hidden="true">→</span>
           </UI.Button>
