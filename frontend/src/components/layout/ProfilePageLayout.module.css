@@ -9,22 +9,6 @@
   padding: 0 var(--spacing-md);
 }
 
-.rootHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 64px;
-  padding: var(--spacing-sm) 0;
-}
-
-.rootHeader h1 {
-  margin: 0;
-  color: #303568;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
 .content {
   display: flex;
   flex-direction: column;
