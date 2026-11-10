@@ -1,0 +1,14 @@
+.stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.label { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; }
+.muted { margin: 0; color: var(--color-text-secondary); font-size: 13px; font-weight: 400; line-height: 1.8; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.input { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+.tile, .placeholder { display: flex; min-height: 100px; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed #d4c5ff; border-radius: 12px; }
+.tile { position: relative; cursor: pointer; color: var(--color-primary); background: #f5f2ff; font-size: 13px; font-weight: 700; }
+.tile:focus-within { outline: 3px solid #a18aff; outline-offset: 3px; }
+.placeholder { color: #9690ad; font-size: 28px; }
+.attachment { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; overflow-wrap: anywhere; padding: 8px; border: 1px dashed #cfc0ff; border-radius: 12px; font-size: 12px; }
+.attachment img { display: block; width: 100%; height: 90px; object-fit: cover; border-radius: 8px; }
+.attachment span { max-width: 100%; }
+.attachment button { border: 0; background: #f5f2ff; color: var(--color-primary); padding: 8px; border-radius: 8px; cursor: pointer; }
+.attachment button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
