@@ -1,4 +1,3 @@
-import type { SessionToken } from "../../domain/shared/session-token.ts";
 import type { UserId } from "../../domain/shared/ids.ts";
 
 /**
@@ -11,11 +10,11 @@ import type { UserId } from "../../domain/shared/ids.ts";
 export interface SessionAuthenticator {
   /**
    * セッションを検証する。
-   * @param token 形式を確認済みのセッション ID
+   * @param headers Cookieを含むHTTPヘッダ。署名・期限はBetter Authが検証する。
    * @param now 現在時刻。有効期限の判定に使う（Clock から得た値を渡す）
-   * @returns 有効なセッションならその持ち主。無効（存在しない、期限切れ、失効）なら null。例外は投げない
+   * @returns 有効なセッションならその持ち主。無効（存在しない、期限切れ、失効）なら null。DB障害等は例外。
    */
-  authenticate(token: SessionToken, now: Date): Promise<UserId | null>;
+  authenticate(headers: Readonly<Record<string, string | string[] | undefined>>, now: Date): Promise<UserId | null>;
 }
 /** 実行時の DI トークン。TypeScript の interface は実行時に消えるため、束縛と注入にはこの Symbol を使う */
 export const SESSION_AUTHENTICATOR = Symbol("SessionAuthenticator");

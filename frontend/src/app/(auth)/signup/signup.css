@@ -86,6 +86,13 @@
   line-height: 1.4;
 }
 
+.signup-error {
+  margin: 0;
+  color: #c93636;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .signup-consent {
   display: flex;
   align-items: flex-start;

@@ -119,8 +119,8 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 | `composition/persistence.module.ts` | DB 接続と、DB・システムに依存する port の束縛 | 骨格（済み） |
 | `composition/auth.module.ts` | 認証ガードと Origin ガードの全体適用 | 骨格（済み） |
 | `presentation/http/errors/` | `DomainError`、`ZodError`、Nest の例外を API のエラーレスポンスに変換する | 骨格（済み） |
-| `presentation/http/auth/` | `@Public()`、`@CurrentUser()`、セッション Cookie の属性、`SessionAuthGuard`、`OriginGuard` | ガードの本体は認証の担当 |
-| `infrastructure/auth/session-authenticator.ts` | `SessionAuthenticator` の実装 | 認証の担当 |
+| `presentation/http/auth/` | `@Public()`、`@CurrentUser()`、`SessionAuthGuard`、`OriginGuard` | 実装済み |
+| `infrastructure/auth/` | Better Auth設定と`SessionAuthenticator`の実装 | 実装済み |
 | `infrastructure/system/system.ts` | `Clock` と `IdGenerator` の実装 | 骨格（済み） |
 
 ### リクエストが処理される流れ
@@ -153,8 +153,8 @@ constructor(@Inject(TASK_REPOSITORY) private readonly tasks: TaskRepository) {}
 
 ### 認証の方針
 
-- サーバー側セッション。Cookie にはランダムなセッション ID だけを入れ、リフレッシュトークンは使わない。
-- Cookie の属性: `HttpOnly; Secure; SameSite=Lax; Path=/api`（`session-cookie.ts`）。
+- Better Authのメール・パスワード認証とDBセッションを使う。設定・Migration・運用は[better-auth.md](better-auth.md)を参照。
+- Cookie の属性: `HttpOnly; SameSite=Lax; Path=/api`、HTTPSでは`Secure`。発行・検証はBetter Authが行う。
 - CSRF 対策: `SameSite=Lax` に加え、状態を変えるリクエストで `Origin` を検証する（`OriginGuard`）。
 - 認証が不要なエンドポイントには `@Public()` を付ける。
 
@@ -482,6 +482,6 @@ domain と application は `DomainError`（`code`、`message`、`details`）を�
 
 ## 未決定
 
-- 認証基盤。サーバー側セッションの方針は決まっているが、ログイン方式（OAuth かメールとパスワードか）は未決定。
+- 認証の追加機能（メール確認・パスワード再設定のメール送信、OAuth、既存seedユーザーの移行方法）。
 - 通知・自分の情報の API の経路（`/api/notifications`、`/api/me` 以下）は暫定。API 設計書と食い違う場合は設計書に合わせる。
 - 通知の範囲。今は通知を作らず（モック）、`TaskEventPublisher` は投稿だけを保存する。通知を始めるときに、種別（現在の5種は暫定）、宛先、文面を決める。

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { TaskStatsCard } from "../../../components/tasks/TaskStatsCard";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { authClient, clearProfileCache } from "../../../lib/authClient";
 import { ProfilePageLayout } from "../../../components/layout/ProfilePageLayout";
 import { Modal } from "../../../components/ui/Modal";
 import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
@@ -121,6 +122,30 @@ export default function MyPage() {
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const [statsError, setStatsError] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const loggingOut = useRef(false);
+
+  async function logout() {
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    setIsLoggingOut(true);
+    setLogoutError(null);
+    try {
+      const result = await authClient.signOut();
+      if (result.error) {
+        setLogoutError("ログアウトできませんでした。再度お試しください。");
+        return;
+      }
+      clearProfileCache();
+      window.location.assign("/login");
+    } catch {
+      setLogoutError("通信に失敗しました。再度お試しください。");
+    } finally {
+      loggingOut.current = false;
+      setIsLoggingOut(false);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -185,7 +210,7 @@ export default function MyPage() {
           <button
             type="button"
             aria-haspopup="dialog"
-            onClick={() => { setIsLogoutModalOpen(true); }}
+            onClick={() => { setLogoutError(null); setIsLogoutModalOpen(true); }}
             className={[styles["settingItem"], styles["logout"]].filter(Boolean).join(" ")}
           >
             <span className={styles["settingIcon"]}>
@@ -200,26 +225,27 @@ export default function MyPage() {
         <Modal
           isOpen={isLogoutModalOpen}
           title="ログアウトしますか？"
-          onClose={() => { setIsLogoutModalOpen(false); }}
+          isLoading={isLoggingOut}
+          onClose={() => { if (!loggingOut.current) setIsLogoutModalOpen(false); }}
         >
           <p>ログアウトすると、再度ログインが必要になります。</p>
-          <p id="logout-unavailable">ログアウト機能は現在未実装のため、ご利用いただけません。</p>
+          {logoutError && <p role="alert">{logoutError}</p>}
           <div className={styles["logoutActions"]}>
             <button
               type="button"
               className={styles["logoutCancel"]}
-              onClick={() => { setIsLogoutModalOpen(false); }}
+              disabled={isLoggingOut}
+              onClick={() => { if (!loggingOut.current) setIsLogoutModalOpen(false); }}
             >
               キャンセル
             </button>
-            {/* No logout handler exists yet; do not substitute login navigation. */}
             <button
               type="button"
               className={styles["logoutConfirm"]}
-              aria-describedby="logout-unavailable"
-              disabled
+              onClick={() => { void logout(); }}
+              disabled={isLoggingOut}
             >
-              ログアウト
+              {isLoggingOut ? "ログアウト中..." : "ログアウト"}
             </button>
           </div>
         </Modal>

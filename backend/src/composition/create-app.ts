@@ -1,6 +1,10 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import type { INestApplication } from "@nestjs/common";
+import type { NestExpressApplication } from "@nestjs/platform-express";
+import { toNodeHandler } from "better-auth/node";
+import { BETTER_AUTH } from "../infrastructure/auth/better-auth.ts";
+import type { DoneeAuth } from "../infrastructure/auth/better-auth.ts";
 import { AppModule } from "./app.module.ts";
 
 /**
@@ -13,7 +17,12 @@ import { AppModule } from "./app.module.ts";
  * - `enableShutdownHooks`: SIGTERM / SIGINT で `onApplicationShutdown` が呼ばれ、DB 接続を閉じてから終了する。
  */
 export async function createApp(): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  const auth = app.get<DoneeAuth>(BETTER_AUTH);
+  // Official Node handler must receive the raw stream, before Nest's JSON parser.
+  app.use("/api/auth", toNodeHandler(auth));
+  app.useBodyParser("json", { limit: "1mb" });
+  app.useBodyParser("urlencoded", { extended: true, limit: "1mb" });
   app.setGlobalPrefix("api", { exclude: ["healthz"] });
   app.enableShutdownHooks();
   return app;

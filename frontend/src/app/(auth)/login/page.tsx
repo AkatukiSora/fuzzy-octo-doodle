@@ -1,9 +1,47 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { authClient, clearProfileCache, readFormText } from "../../../lib/authClient";
 import * as UI from "../../../components/ui";
 import Link from "next/link";
 import Image from "next/image";
 import "./login.css";
 
 export default function LoginPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [registered, setRegistered] = useState(false);
+  const submitting = useRef(false);
+
+  useEffect(() => {
+    setRegistered(new URLSearchParams(window.location.search).get("registered") === "1");
+  }, []);
+
+  async function submit(form: HTMLFormElement) {
+    if (submitting.current) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    setError(null);
+    const data = new FormData(form);
+    try {
+      const result = await authClient.signIn.email({
+        email: readFormText(data, "email"),
+        password: readFormText(data, "password"),
+        rememberMe: data.get("remember") === "on",
+      });
+      if (result.error) {
+        setError("ログインできませんでした。メールアドレスとパスワードを確認してください。");
+        return;
+      }
+      clearProfileCache();
+      window.location.assign("/mypage");
+    } catch {
+      setError("通信に失敗しました。時間をおいて再度お試しください。");
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
+  }
   return (
     <main className="login-page">
       <section className="login-container" aria-labelledby="login-title">
@@ -17,7 +55,11 @@ export default function LoginPage() {
           />
         </header>
 
-        <div className="login-form">
+        {registered && <p className="login-notice" role="status">新規登録が完了しました。ログインしてください。</p>}
+        <form className="login-form" onSubmit={(event) => {
+          event.preventDefault();
+          void submit(event.currentTarget);
+        }}>
           <div className="login-field">
             <UI.Input
               className="login-input"
@@ -47,11 +89,12 @@ export default function LoginPage() {
             <span>ログインしたままにする</span>
           </label>
 
-          <UI.Button fullWidth size="lg" className="login-submit">
-            <span>ログイン</span>
+          {error && <p className="login-error" role="alert">{error}</p>}
+          <UI.Button fullWidth size="lg" type="submit" className="login-submit" disabled={isSubmitting}>
+            <span>{isSubmitting ? "ログイン中..." : "ログイン"}</span>
             <span className="login-arrow" aria-hidden="true">→</span>
           </UI.Button>
-        </div>
+        </form>
 
         <div className="login-divider" aria-label="または">
           <span />
