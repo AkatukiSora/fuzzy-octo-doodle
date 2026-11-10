@@ -4,6 +4,7 @@ import Link from "next/link";
 import { TaskStatsCard } from "../../../components/tasks/TaskStatsCard";
 import { useEffect, useState } from "react";
 import { ProfilePageLayout } from "../../../components/layout/ProfilePageLayout";
+import { Modal } from "../../../components/ui/Modal";
 import { fetchProfile, readStoredAvatar } from "../../../lib/profileApi";
 import { fetchOngoingTaskCount } from "../../../lib/myTaskStatsApi";
 import styles from "./MyPage.module.css";
@@ -47,8 +48,13 @@ const settings = [
   },
 ] as const;
 
-function SettingIcon({ name }: { name: (typeof settings)[number]["icon"] }) {
+function SettingIcon({ name }: { name: (typeof settings)[number]["icon"] | "logout" }) {
   const paths = {
+    logout: (
+      <>
+        <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4" />
+      </>
+    ),
     payment: (
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -114,6 +120,7 @@ export default function MyPage() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const [statsError, setStatsError] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -175,17 +182,47 @@ export default function MyPage() {
               </Link>
             );
           })}
-          <Link
-            href="/login"
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => { setIsLogoutModalOpen(true); }}
             className={[styles["settingItem"], styles["logout"]].filter(Boolean).join(" ")}
           >
-            <span className={styles["settingIcon"]}>↪</span>
+            <span className={styles["settingIcon"]}>
+              <SettingIcon name="logout" />
+            </span>
             <span className={styles["settingText"]}>
               <strong>ログアウト</strong>
             </span>
             <Chevron />
-          </Link>
+          </button>
         </nav>
+        <Modal
+          isOpen={isLogoutModalOpen}
+          title="ログアウトしますか？"
+          onClose={() => { setIsLogoutModalOpen(false); }}
+        >
+          <p>ログアウトすると、再度ログインが必要になります。</p>
+          <p id="logout-unavailable">ログアウト機能は現在未実装のため、ご利用いただけません。</p>
+          <div className={styles["logoutActions"]}>
+            <button
+              type="button"
+              className={styles["logoutCancel"]}
+              onClick={() => { setIsLogoutModalOpen(false); }}
+            >
+              キャンセル
+            </button>
+            {/* No logout handler exists yet; do not substitute login navigation. */}
+            <button
+              type="button"
+              className={styles["logoutConfirm"]}
+              aria-describedby="logout-unavailable"
+              disabled
+            >
+              ログアウト
+            </button>
+          </div>
+        </Modal>
     </ProfilePageLayout>
   );
 }
