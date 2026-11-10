@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { BottomNavigation } from "./BottomNavigation";
+import { AppHeader } from "./AppHeader";
 import styles from "./AppLayout.module.css";
 
 interface AppLayoutProps {
@@ -9,6 +10,7 @@ interface AppLayoutProps {
   title?: string;
   showHeader?: boolean;
   headerActions?: ReactNode;
+  customHeader?: ReactNode;
 }
 
 export function AppLayout({
@@ -16,23 +18,16 @@ export function AppLayout({
   title,
   showHeader = true,
   headerActions,
+  customHeader,
 }: AppLayoutProps) {
   return (
     <div className={styles["layout"]}>
       <Sidebar />
 
       <div className={styles["contentArea"]}>
-        {showHeader && (
-          <header className={styles["header"]}>
-            <div className={styles["headerInner"]}>
-              <h1 className={styles["title"]}>
-                {title ?? "Donee"}
-              </h1>
-
-              {headerActions}
-            </div>
-          </header>
-        )}
+        {customHeader ?? (showHeader && (
+          <AppHeader title={title ?? "Donee"} actions={headerActions} />
+        ))}
 
         <main
           className={[

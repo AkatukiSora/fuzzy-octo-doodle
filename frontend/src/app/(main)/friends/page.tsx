@@ -58,9 +58,11 @@ export default function FriendsPage() {
   }
 
   return (
-    <AppLayout showHeader={false}>
+    <AppLayout
+      showHeader={false}
+      customHeader={<FriendsHeader activeTab={activeTab} onTabChange={setActiveTab} />}
+    >
       <div className={styles["screen"]}>
-        <FriendsHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <div className={styles["content"]}>
           {actionError && <p role="alert" className={styles["error"]}>{actionError}</p>}
           {loading ? <p role="status">フレンド情報を読み込んでいます...</p> : error ? (
