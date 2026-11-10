@@ -25,7 +25,7 @@ mise run ci       # CI と同じ検証（Docker が必要）
 
 - [docs/tooling.md](docs/tooling.md) — mise でツールを追加する手順と、pnpm の基本的な使い方
 - [docs/backend-dev-environment.md](docs/backend-dev-environment.md) — backend のローカル開発環境（Docker Engine が必要。DB と API を起動し、変更を自動で反映する）
-- [docs/object-storage.md](docs/object-storage.md) — S3互換ストレージの設定、1Password連携、権限、CORS
+- [docs/object-storage.md](docs/object-storage.md) — S3互換ストレージの設定、SealedSecret、権限、CORS
 - [docs/onboarding-usecase.md](docs/onboarding-usecase.md) — ユースケースを実装する人が最初に読む資料(用語、道筋、進め方、よくある型エラー)
 - [docs/contributing-workflow.md](docs/contributing-workflow.md) — Issue をもらってから PR がマージされるまでの手順(ブランチ、コミット、Draft の PR、レビューへの対応)
 - [docs/backend-architecture.md](docs/backend-architecture.md) — バックエンドの層構成、タスクの状態遷移、実装時の規約
